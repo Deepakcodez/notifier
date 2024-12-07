@@ -9,7 +9,7 @@ import CallCard from "./components/CallCard"
 const Home = () => {
   const socket = useSocket()
   const { currentUser, } = useCurrentUser();
-  const { users, loading, error } = useAllUsers();
+  const { users,  } = useAllUsers();
   const [showCallCard, setShowCallCard] = useState(false)
   const [incommingCallFrom, setIncommingCallFrom] = useState("")
   const audioRef = useRef<HTMLAudioElement | null>(null);
