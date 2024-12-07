@@ -15,7 +15,7 @@ const Register = () => {
     const submitHandler = async () => {
         try {
             const response = await axios.post(
-                'http://localhost:8000/api/v1/user/register',
+                'https://notifierbackend.onrender.com/api/v1/user/register',
                 { ...userData }
             );
 

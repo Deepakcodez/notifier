@@ -17,7 +17,7 @@ const useAllUsers = () => {
     const fetchUsers = async () => {
       setLoading(true);
       try {
-        const response = await axios.get("http://localhost:8000/api/v1/user/all");
+        const response = await axios.get("https://notifierbackend.onrender.com/api/v1/user/all");
         setUsers(response.data.users); // Assuming the API response has a `users` array
       } catch (err:any) {
         console.error("Error fetching users:", err);
