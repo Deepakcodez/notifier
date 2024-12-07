@@ -1,7 +1,7 @@
 import React, { createContext } from "react";
 import { io, Socket } from "socket.io-client";
 const URL = `http://localhost:8000`;
-const prodURL = ''
+const prodURL = 'https://notifierbackend.onrender.com'
 
 const getServerUrl = () => {
     if (process.env.NODE_ENV === 'production') {
