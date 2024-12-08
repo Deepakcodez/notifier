@@ -26,7 +26,7 @@ const Home = () => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [incommingOffer, setIncommingOffer] = useState<RTCSessionDescriptionInit | null>(null)
 
-
+  console.log('>>>>>>>>>>>', declineCall, acceptCall)
   //socket functions
   const handleNewUserJoin = async ({ roomId, emailId }: { roomId: string, emailId: string }) => {
     console.log("new user joined", roomId, emailId);
@@ -49,14 +49,14 @@ const Home = () => {
 
   const handleCallUser = async (toEmail: string) => {
     const stream = await getUserMediaStream();
-        if (stream) {
-            setMyVideoStream(stream);
-            await sendStream(stream);
-            const offer = await createOffer();
-            socket.emit('call-user', { offer, emailId: currentUser?.email, to: toEmail });
-            setcalling(true);
-            setCallTo(toEmail);
-        }
+    if (stream) {
+      setMyVideoStream(stream);
+      await sendStream(stream);
+      const offer = await createOffer();
+      socket.emit('call-user', { offer, emailId: currentUser?.email, to: toEmail });
+      setcalling(true);
+      setCallTo(toEmail);
+    }
   }
 
 
@@ -80,11 +80,12 @@ const Home = () => {
 
   const handleCallAccepted = async ({ ans }: { ans: RTCSessionDescriptionInit }) => {
     console.log('Call accepted with answer', ans);
+    await setRemoteAnswer(ans);
     const stream = await getUserMediaStream();
-        if (stream) {
-            setMyVideoStream(stream);
-            await sendStream(stream);
-        }
+    if (stream) {
+      setMyVideoStream(stream);
+      await sendStream(stream);
+    }
   }
 
   const handleCallDeclined = async ({ from }: { from: string, }) => {
