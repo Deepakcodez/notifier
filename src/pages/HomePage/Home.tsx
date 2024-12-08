@@ -6,6 +6,7 @@ import toast from "react-hot-toast"
 import useAllUsers from "../../hooks/allUsers"
 import tune from '../../assets/music/tune.mp3'
 import CallCard from "./components/CallCard"
+import CallingCard from "./components/CallingCard"
 
 
 const Home = () => {
@@ -15,6 +16,8 @@ const Home = () => {
   const [showCallCard, setShowCallCard] = useState(false)
   const [incommingCallFrom, setIncommingCallFrom] = useState("")
   const [declineCall, setDeclineCall] = useState<boolean>(false)
+  const [callTo, setCallTo] = useState<string>("")
+  const [calling, setcalling] = useState<boolean>(false)
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
 
@@ -40,6 +43,8 @@ const Home = () => {
 
   const handleCallUser = (toEmail: string) => {
     socket.emit('call-user', { emailId: currentUser?.email, to: toEmail })
+    setcalling(true)
+    setCallTo(toEmail);
   }
 
   const handleIncommingCall = async ({ from, to }: { from: string, to: string }) => {
@@ -54,6 +59,9 @@ const Home = () => {
   const handleCallDeclined = async ({ from }: { from: string, }) => {
     console.log("call declined from", from, "to you",);
     toast.error(`${from} declined your call`)
+    setDeclineCall(false)
+    setcalling(false)
+    setCallTo("")
   }
 
 
@@ -98,6 +106,7 @@ const Home = () => {
     if (declineCall) {
 
       socket.emit('call-declined', { from: incommingCallFrom })
+      setDeclineCall(false)
     }
   }, [declineCall])
 
@@ -128,6 +137,11 @@ const Home = () => {
           audioRef={audioRef}
           setDeclineCall={setDeclineCall}
         />
+      }
+
+      {
+        calling &&
+        <CallingCard callingTo={callTo} />
       }
 
     </div>

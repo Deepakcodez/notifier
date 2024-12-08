@@ -29,6 +29,7 @@ const CallCard: React.FC<callCardProps> = ({
         }
         setShowCallCard(false)
         setDeclineCall(true)
+        
 
 
     }
