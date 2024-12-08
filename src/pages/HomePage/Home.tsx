@@ -14,7 +14,7 @@ import ReactPlayer from "react-player"
 const Home = () => {
   const socket = useSocket()
   const { currentUser, } = useCurrentUser();
-  const { peer, createOffer, createAnswer, setRemoteAnswer, sendStream, remoteStream } = usePeer();
+  const { peer, createOffer, createAnswer, setRemoteAnswer, sendStream, remoteStream, addIceCandidate } = usePeer();
   const { users, } = useAllUsers();
   const [showCallCard, setShowCallCard] = useState(false)
   const [incommingCallFrom, setIncommingCallFrom] = useState("")
@@ -48,13 +48,22 @@ const Home = () => {
   }
 
   const handleCallUser = async (toEmail: string) => {
-    const offer = await createOffer();
-    socket.emit('call-user', { offer, emailId: currentUser?.email, to: toEmail })
-    setcalling(true)
-    setCallTo(toEmail);
+    const stream = await getUserMediaStream();
+        if (stream) {
+            setMyVideoStream(stream);
+            await sendStream(stream);
+            const offer = await createOffer();
+            socket.emit('call-user', { offer, emailId: currentUser?.email, to: toEmail });
+            setcalling(true);
+            setCallTo(toEmail);
+        }
   }
 
-  const handleIncommingCall = async ({ from, to, offer }: { from: string, to: string, offer: any }) => {
+
+  // from-->  from where the call is coming
+  //to -->  user itself
+  const handleIncommingCall = async ({ from, to, offer }:
+    { from: string, to: string, offer: RTCSessionDescriptionInit }) => {
     console.log("incomming call from", from, "to you", to, "with offer", offer);
     setShowCallCard(true)
     setIncommingCallFrom(from)
@@ -71,11 +80,11 @@ const Home = () => {
 
   const handleCallAccepted = async ({ ans }: { ans: RTCSessionDescriptionInit }) => {
     console.log('Call accepted with answer', ans);
-    let stream = await getUserMediaStream();
-    await setRemoteAnswer(ans);
-    if (stream) {
-      await sendStream(stream);
-    }
+    const stream = await getUserMediaStream();
+        if (stream) {
+            setMyVideoStream(stream);
+            await sendStream(stream);
+        }
   }
 
   const handleCallDeclined = async ({ from }: { from: string, }) => {
@@ -88,7 +97,7 @@ const Home = () => {
 
 
   // Handle ICE candidate event
-  const handleIceCandidate = useCallback((event: any) => {
+  const handleIceCandidate = useCallback((event: RTCPeerConnectionIceEvent) => {
     if (event.candidate) {
       socket.emit('ice-candidate', { candidate: event.candidate, to: callTo });
     }
@@ -96,15 +105,15 @@ const Home = () => {
 
 
   // Handle negotiation needed event
-  const handleNegotiationNeeded = useCallback(async () => {
-    try {
-      const offer = await peer.createOffer();
-      await peer.setLocalDescription(offer);
-      socket.emit('call-user', { offer: peer.localDescription, emailId: callTo });
-    } catch (err) {
-      console.error('Error during negotiation:', err);
-    }
-  }, [peer, socket, callTo]);
+  // const handleNegotiationNeeded = useCallback(async () => {
+  //   try {
+  //     const offer = await peer.createOffer();
+  //     await peer.setLocalDescription(offer);
+  //     socket.emit('call-user', { offer: peer.localDescription, emailId: currentUser?.email, to: callTo });
+  //   } catch (err) {
+  //     console.error('Error during negotiation:', err);
+  //   }
+  // }, [peer, socket, callTo]);
 
 
   // Get user media stream
@@ -119,6 +128,13 @@ const Home = () => {
   };
 
 
+  peer.addEventListener("icecandidate", (event) => {
+    if (event.candidate) {
+      console.log("New ICE Candidate:", event.candidate);
+      socket.emit("ice-candidate", { candidate: event.candidate, to: callTo });
+    }
+  });
+
 
 
   useEffect(() => {
@@ -129,11 +145,12 @@ const Home = () => {
     socket.on('call-accepted', handleCallAccepted)
     socket.on('call-declined', handleCallDeclined)
     socket.on('ice-candidate', ({ candidate }) => {
-      peer.addIceCandidate(new RTCIceCandidate(candidate));
+      console.log('>>>>>>>>>>>candidate from homne 143', candidate)
+      addIceCandidate(new RTCIceCandidate(candidate));
     });
-
     peer.addEventListener('icecandidate', handleIceCandidate);
-    peer.addEventListener('negotiationneeded', handleNegotiationNeeded);
+    // peer.addEventListener('negotiationneeded', handleNegotiationNeeded);
+
 
 
 
@@ -144,8 +161,12 @@ const Home = () => {
       socket.off('incoming-call', handleIncommingCall)
       socket.off('call-declined', handleCallDeclined)
 
+
+      peer.removeEventListener("icecandidate", handleIceCandidate);
+      // peer.removeEventListener("negotiationneeded", handleNegotiationNeeded);
+
     };
-  }, [socket,]);
+  }, [socket, peer, handleNewUserJoin, handleJoinedRoom, handleUserJoined, handleIncommingCall, handleCallAccepted, handleCallDeclined, handleIceCandidate, addIceCandidate]);
 
   useEffect(() => {
 
@@ -161,6 +182,13 @@ const Home = () => {
   useEffect(() => {
     audioRef.current = new Audio(tune);
   }, []);
+  useEffect(() => {
+    console.log("My Video Stream:", myVideoStream);
+  }, [myVideoStream]);
+
+  useEffect(() => {
+    console.log("Remote Stream:", remoteStream);
+  }, [remoteStream]);
 
 
 

@@ -44,7 +44,6 @@ const CallCard: React.FC<callCardProps> = ({
     }
 
     const onAccept = async () => {
-
         console.log('>>>>>>>>>>>trying to accept call with offer', offer)
         if (audioRef.current) {
             audioRef.current.pause();
@@ -52,7 +51,6 @@ const CallCard: React.FC<callCardProps> = ({
         }
         setShowCallCard(false)
         setAcceptCall(true)
-
         const ans = await createAnswer(offer as RTCSessionDescriptionInit)
         ans && socket.emit('call-accepted', { emailId: from, ans })
 

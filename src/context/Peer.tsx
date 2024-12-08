@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useEffect } from "react";
+import React, { useCallback, useContext, useEffect, useState } from "react";
 import peerConfiguration from "../utils/stunServers";
 
 
@@ -8,7 +8,8 @@ const PeerContext = React.createContext<{
     createOffer: () => Promise<RTCSessionDescriptionInit>;
     setRemoteAnswer: (answer: RTCSessionDescriptionInit) => Promise<void>;
     sendStream: (stream: MediaStream) => Promise<void>;
-    remoteStream: any
+    remoteStream: MediaStream | null;
+    addIceCandidate: (candidate: RTCIceCandidate) => Promise<void>;
 
 } | null>(null);
 
@@ -16,7 +17,8 @@ export const PeerProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     //Creating peer connection 
     const peer = React.useMemo(() => new RTCPeerConnection(peerConfiguration), []);
-    const [remoteStream, setRemoteStream] = React.useState<any>(null)
+    const [remoteStream, setRemoteStream] = React.useState<MediaStream | null>(null);
+    const [iceCandidateQueue, setIceCandidateQueue] = useState<RTCIceCandidate[]>([]);
 
     const createOffer = async () => {
         const offer = await peer.createOffer();
@@ -37,26 +39,20 @@ export const PeerProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (peer.signalingState !== "have-local-offer") {
             console.warn("Skipping setRemoteAnswer: Incorrect signaling state", peer.signalingState);
             return;
-          }
-          try {
+        }
+        try {
             await peer.setRemoteDescription(answer);
             console.log("Remote answer set successfully");
-          } catch (error) {
+        } catch (error) {
             console.error("Failed to set remote answer:", error);
-          }
+        }
     }
 
 
     // Send a media stream
     const sendStream = async (stream: MediaStream) => {
-        const senders = peer.getSenders();
         stream.getTracks().forEach((track) => {
-            const sender = senders.find((s) => s.track?.kind === track.kind);
-            if (sender) {
-                sender.replaceTrack(track); // Replace existing track.
-            } else {
-                peer.addTrack(track, stream); // Add new track if not already present.
-            }
+            peer.addTrack(track, stream);
         });
     };
 
@@ -64,11 +60,25 @@ export const PeerProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const handleTrackEvent = useCallback((event: RTCTrackEvent) => {
         console.log('Track event received:', event);
         if (event.streams && event.streams[0]) {
-            setRemoteStream(new MediaStream(event.streams[0].getTracks()));
+            setRemoteStream(event.streams[0]);
         } else {
             console.warn('No streams in track event');
         }
     }, []);
+
+
+
+    const addIceCandidate = async (candidate: RTCIceCandidate) => {
+        try {
+            if (peer.remoteDescription && peer.remoteDescription.type) {
+                await peer.addIceCandidate(candidate);
+            } else {
+                setIceCandidateQueue(prev => [...prev, candidate]);
+            }
+        } catch (error) {
+            console.error("Error adding ICE candidate:", error);
+        }
+    };
 
 
 
@@ -101,7 +111,7 @@ export const PeerProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     return (
         <PeerContext.Provider
-            value={{ peer, createOffer, createAnswer, setRemoteAnswer, sendStream, remoteStream }}>
+            value={{ peer, createOffer, createAnswer, setRemoteAnswer, sendStream, remoteStream, addIceCandidate }}>
             {children}
         </PeerContext.Provider>
     );
