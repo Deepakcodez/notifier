@@ -1,17 +1,26 @@
 import { Check, Phone, X } from "lucide-react";
 import React from "react";
 
+
 interface callCardProps {
+   
     from: string;
     setShowCallCard: React.Dispatch<React.SetStateAction<boolean>>,
     audioRef: React.MutableRefObject<HTMLAudioElement | null>;
+    setDeclineCall: React.Dispatch<React.SetStateAction<boolean>>,
 }
+
+
 const CallCard: React.FC<callCardProps> = ({
+ 
     from,
     setShowCallCard,
-    audioRef
+    audioRef,
+    setDeclineCall
+
 
 }) => {
+   
 
     const onDecline = () => {
         if (audioRef.current) {
@@ -19,6 +28,8 @@ const CallCard: React.FC<callCardProps> = ({
             audioRef.current.currentTime = 0;
         }
         setShowCallCard(false)
+        setDeclineCall(true)
+
 
     }
     return (

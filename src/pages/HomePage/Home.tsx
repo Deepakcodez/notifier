@@ -6,12 +6,15 @@ import toast from "react-hot-toast"
 import useAllUsers from "../../hooks/allUsers"
 import tune from '../../assets/music/tune.mp3'
 import CallCard from "./components/CallCard"
+
+
 const Home = () => {
   const socket = useSocket()
   const { currentUser, } = useCurrentUser();
-  const { users,  } = useAllUsers();
+  const { users, } = useAllUsers();
   const [showCallCard, setShowCallCard] = useState(false)
   const [incommingCallFrom, setIncommingCallFrom] = useState("")
+  const [declineCall, setDeclineCall] = useState<boolean>(false)
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
 
@@ -40,11 +43,17 @@ const Home = () => {
   }
 
   const handleIncommingCall = async ({ from, to }: { from: string, to: string }) => {
-    // if (to !== currentUser?.email) return;
     console.log("incomming call from", from, "to you", to);
     setShowCallCard(true)
     setIncommingCallFrom(from)
-    audioRef?.current?.play()
+    audioRef?.current?.play().catch((err) => {
+      console.error("Audio playback failed:", err);
+    });
+  }
+
+  const handleCallDeclined = async ({ from }: { from: string, }) => {
+    console.log("call declined from", from, "to you",);
+    toast.error(`${from} declined your call`)
   }
 
 
@@ -55,11 +64,16 @@ const Home = () => {
     socket.on('joined-room', handleJoinedRoom)
     socket.on('user-joined', handleUserJoined)
     socket.on('incoming-call', handleIncommingCall)
+    socket.on('call-declined', handleCallDeclined)
 
 
 
     return () => {
       socket.off('user-joined', handleNewUserJoin);
+      socket.off('joined-room', handleJoinedRoom)
+      socket.off('user-joined', handleUserJoined)
+      socket.off('incoming-call', handleIncommingCall)
+      socket.off('call-declined', handleCallDeclined)
 
     };
   }, [socket,]);
@@ -75,9 +89,17 @@ const Home = () => {
   }, [currentUser])
 
 
-useEffect(() => {
-  audioRef.current = new Audio(tune);
-}, []);
+  useEffect(() => {
+    audioRef.current = new Audio(tune);
+  }, []);
+
+  useEffect(() => {
+
+    if (declineCall) {
+
+      socket.emit('call-declined', { from: incommingCallFrom })
+    }
+  }, [declineCall])
 
   return (
     <div className="relative w-full h-screen flex gap-12 flex-wrap  bg-violet-100 px-12 py-12">
@@ -100,7 +122,12 @@ useEffect(() => {
       }
       {
         showCallCard &&
-        <CallCard from={incommingCallFrom} setShowCallCard={setShowCallCard} audioRef={audioRef}  />
+        <CallCard
+          from={incommingCallFrom}
+          setShowCallCard={setShowCallCard}
+          audioRef={audioRef}
+          setDeclineCall={setDeclineCall}
+        />
       }
 
     </div>
