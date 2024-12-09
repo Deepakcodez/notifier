@@ -197,79 +197,79 @@ const Home = () => {
 
 
   return (
-    <div className="relative w-full min-h-screen h-auto flex gap-12 flex-wrap  bg-violet-100 px-12 py-12">
+    <>
+      <div className="relative w-full min-h-screen h-auto flex gap-12 flex-wrap  bg-violet-100 px-12 py-12">
 
+        {
+          users.filter((user) => user.email !== currentUser?.email)
+            .map((user, index) => {
+              return <div key={index} className="flex flex-col justify-center items-center bg-white p-4 rounded-lg shadow-lg h-[12rem]  w-[15rem] gap-4">
+                <div>
+                  <h1 className="text-2xl font-bold">{user.name}</h1>
+                  <p className="text-gray-500 text-sm">{user.email}</p>
+                </div>
+                <div onClick={() => handleCallUser(user?.email)} >
+                  <CallButons />
+                </div>
+              </div>
+
+            }
+            )
+        }
+        {
+          showCallCard &&
+          <CallCard
+            socket={socket}
+            from={incommingCallFrom}
+            setShowCallCard={setShowCallCard}
+            audioRef={audioRef}
+            setDeclineCall={setDeclineCall}
+            setAcceptCall={setAcceptCall}
+            createAnswer={createAnswer}
+            offer={incommingOffer}
+            setMyVideoStream={setMyVideoStream}
+          />
+        }
+
+        {
+          calling &&
+          <CallingCard callingTo={callTo} />
+        }
+        
+      </div>
       {
-        users.filter((user) => user.email !== currentUser?.email)
-          .map((user, index) => {
-            return <div key={index} className="flex flex-col justify-center items-center bg-white p-4 rounded-lg shadow-lg h-[12rem]  w-[15rem] gap-4">
-              <div>
-                <h1 className="text-2xl font-bold">{user.name}</h1>
-                <p className="text-gray-500 text-sm">{user.email}</p>
-              </div>
-              <div onClick={() => handleCallUser(user?.email)} >
-                <CallButons />
-              </div>
+          (myVideoStream || remoteStream) && (
+            <div className="absolute z-50 bg-violet-50 h-screen w-full flex flex-col justify-center items-center gap-4">
+              {
+                myVideoStream && (
+                  <video
+                    ref={(ref) => {
+                      if (ref) ref.srcObject = myVideoStream;
+                    }}
+                    autoPlay
+                    muted
+                    width="50"
+                    height="50"
+                  />
+                )
+              }
+              {
+                remoteStream && (
+                  <video
+                    ref={(ref) => {
+                      if (ref) ref.srcObject = remoteStream;
+                    }}
+                    autoPlay
+                    width="400"
+                    height="300"
+                  />
+                )
+              }
             </div>
-
-          }
           )
-      }
-      {
-        showCallCard &&
-        <CallCard
-          socket={socket}
-          from={incommingCallFrom}
-          setShowCallCard={setShowCallCard}
-          audioRef={audioRef}
-          setDeclineCall={setDeclineCall}
-          setAcceptCall={setAcceptCall}
-          createAnswer={createAnswer}
-          offer={incommingOffer}
-          setMyVideoStream={setMyVideoStream}
-        />
-      }
+        }
+    </>
 
-      {
-        calling &&
-        <CallingCard callingTo={callTo} />
-      }
-      {
-  (myVideoStream || remoteStream) && (
-    <div className="absolute z-50 bg-violet-50 h-screen w-full flex flex-col justify-center items-center gap-4">
-      {
-        myVideoStream && (
-          <video
-            ref={(ref) => {
-              if (ref) ref.srcObject = myVideoStream;
-            }}
-            autoPlay
-            muted
-            width="400"
-            height="300"
-          />
-        )
-      }
-      {
-        remoteStream && (
-          <video
-            ref={(ref) => {
-              if (ref) ref.srcObject = remoteStream;
-            }}
-            autoPlay
-            width="400"
-            height="300"
-          />
-        )
-      }
-    </div>
-  )
-}
-
-
-
-
-    </div>
   )
 }
 export default Home
