@@ -37,6 +37,8 @@ export const PeerProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     const setRemoteAnswer = async (answer: RTCSessionDescriptionInit) => {
+
+        console.log('>>>>>>>>>>>ans', answer)
         if (peer.signalingState === "have-local-offer") {
             try {
               await peer.setRemoteDescription(answer);

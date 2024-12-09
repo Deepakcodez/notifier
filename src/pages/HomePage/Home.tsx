@@ -85,9 +85,13 @@ const Home = () => {
   }
 
   const handleCallAccepted = async ({ ans }: { ans: RTCSessionDescriptionInit }) => {
-    // console.log('Call accepted with answer', ans);
+    console.log('Call accepted with answer now try to set remote answer', ans);
     setcalling(false)
-    await setRemoteAnswer(ans);
+   try {
+     await setRemoteAnswer(ans);
+   } catch (error) {
+    console.log('>>>>>>>>>>> line 93 handleCallAccepted ', error)
+   }
     const stream = await getUserMediaStream();
     if (stream) {
       setMyVideoStream(stream);
