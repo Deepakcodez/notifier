@@ -173,7 +173,7 @@ const Home = () => {
       addIceCandidate(new RTCIceCandidate(candidate));
     });
     socket.on('negotiation-needed', async ({ offer, from }) => {
-      await peer.setRemoteDescription(new RTCSessionDescription(offer));
+      await peer.setRemoteDescription(offer);
       const answer = await createAnswer(offer);
       socket.emit('negotiation-done', { answer, to: from });
     });
