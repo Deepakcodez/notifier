@@ -42,16 +42,18 @@ export const PeerProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const setRemoteAnswer = async (answer: RTCSessionDescriptionInit) => {
 
         console.log('>>>>>>>>>>>ans', answer)
-        if (peer.signalingState === "have-local-offer") {
-            try {
-              await peer.setRemoteDescription(answer);
-              console.log("Remote answer set successfully");
-            } catch (error) {
-              console.error("Failed to set remote answer:", error);
+        try {
+            if (peer.signalingState === "have-local-offer") {
+                await peer.setRemoteDescription(answer);
+                console.log("Remote answer set successfully");
+            } else if (peer.signalingState === "stable") {
+                console.log("Peer connection is already in 'stable' state. No need to set remote answer.");
+            } else {
+                console.warn("Attempted to set remote answer in incorrect state:", peer.signalingState);
             }
-          } else {
-            console.warn("Attempted to set remote answer in incorrect state:", peer.signalingState);
-          }
+        } catch (error) {
+            console.error("Failed to set remote answer:", error);
+        }
     }
 
 
@@ -110,16 +112,16 @@ export const PeerProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Log remote stream changes
     useEffect(() => {
         if (remoteStream) {
-          console.log("Remote Stream is active:", remoteStream.active);
-          remoteStream.getTracks().forEach(track => {
-            console.log(`Track kind: ${track.kind}, enabled: ${track.enabled}, readyState: ${track.readyState}`);
-          });
+            console.log("Remote Stream is active:", remoteStream.active);
+            remoteStream.getTracks().forEach(track => {
+                console.log(`Track kind: ${track.kind}, enabled: ${track.enabled}, readyState: ${track.readyState}`);
+            });
         }
-      }, [remoteStream]);
+    }, [remoteStream]);
 
     return (
         <PeerContext.Provider
-            value={{ peer, createOffer, createAnswer, setRemoteAnswer, sendStream, remoteStream, addIceCandidate , setRemoteStream}}>
+            value={{ peer, createOffer, createAnswer, setRemoteAnswer, sendStream, remoteStream, addIceCandidate, setRemoteStream }}>
             {children}
         </PeerContext.Provider>
     );
