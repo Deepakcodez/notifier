@@ -53,21 +53,27 @@ const CallCard: React.FC<callCardProps> = ({
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
             console.log('Stream obtained from receiver:', stream);
-            setMyVideoStream(stream);
-            for (const track of stream.getTracks()) {
-                Peer.peer?.addTrack(track, stream);
+            setMyVideoStream((prev: any) => {
+                console.log('>>>>>>>>>>>', prev)
+                return stream
+            });
+
+            const ans = await Peer.getAnswer(offer);
+            if (ans) {
+                await Peer.setLocalDescription(ans);
+                socket.emit('call-accepted', { emailId: from, ans });
             }
+
+            // for (const track of stream.getTracks()) {
+            //     Peer.peer?.addTrack(track, stream);
+            // }
 
         } catch (error) {
             console.error('Error getting user media:', error);
         }
 
-        
-        const ans = await Peer.getAnswer(offer);
-        if (ans) {
-            await Peer.setLocalDescription(ans);
-            socket.emit('call-accepted', { emailId: from, ans });
-        }
+
+
 
     }
 

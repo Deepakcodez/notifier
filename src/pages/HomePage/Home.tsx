@@ -32,12 +32,21 @@ const Home = () => {
   const getUserMediaStream = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      setMyVideoStream(stream);
+      setMyVideoStream((prev: any) => {
+        console.log('>>>>>>>>>>>', prev)
+        return stream
+      });
       return stream;
     } catch (error) {
       console.error("Error accessing media devices:", error);
     }
   };
+
+  const sendStreams = useCallback(() => {
+    for (const track of myVideoStream.getTracks()) {
+      Peer.peer?.addTrack(track, myStream);
+    }
+  }, [myVideoStream]);
 
   //socket functions
   const handleNewUserJoin = async ({ roomId, emailId }: { roomId: string, emailId: string }) => {
@@ -101,7 +110,6 @@ const Home = () => {
     console.log('Call accepted with answer now try to set remote answer', ans);
     setcalling(false)
     try {
-      // await setRemoteAnswer(ans);
       Peer.setLocalDescription(ans)
     } catch (error) {
       console.log('>>>>>>>>>>> Error in set in local description ', error)
@@ -109,22 +117,19 @@ const Home = () => {
     const stream = await getUserMediaStream();
     if (stream) {
       setMyVideoStream(stream);
+      sendStreams();
 
-      for(const track of stream.getTracks()) {
-        Peer.peer?.addTrack(track, stream);
-      
+
+      // peer.addEventListener('track', handleTrackEvent);
     }
-
-    
-    // peer.addEventListener('track', handleTrackEvent);
-  }}
+  }
 
 
   const handleTrackEvent = useCallback((event: RTCTrackEvent) => {
     console.log('Track event received:', event);
-    if (event.streams && event.streams[0]) {
-        setRemoteVideoStream(event.streams[0]);
-      // setRemoteStream(event.streams[0]);
+    if (event.streams) {
+      setRemoteVideoStream(event.streams[0]);
+
     } else {
       console.warn('No streams in track event');
     }
@@ -140,25 +145,38 @@ const Home = () => {
 
 
   // Handle ICE candidate event
-  const handleIceCandidate = useCallback((event: RTCPeerConnectionIceEvent) => {
-    if (event.candidate) {
-      socket.emit('ice-candidate', { candidate: event.candidate, to: callTo });
-    }
-  }, [socket, callTo]);
+  // const handleIceCandidate = useCallback((event: RTCPeerConnectionIceEvent) => {
+  //   if (event.candidate) {
+  //     socket.emit('ice-candidate', { candidate: event.candidate, to: callTo });
+  //   }
+  // }, [socket, callTo]);
 
 
   // Handle negotiation needed event
   const handleNegotiationNeeded = useCallback(async () => {
     try {
-      
+
       const offer = await Peer.getOffer();
       socket.emit('negotiation-needed', { offer, to: callTo });
     } catch (err) {
       console.error('Error during negotiation:', err);
     }
-  }, [, socket, callTo, ]);
+  }, [, socket, callTo,]);
 
+  const handleNegotiationDone = useCallback(async ({ from, answer }:{from:string, answer:RTCSessionDescriptionInit}) => {
+    console.log('>>>>>>>>>>>handleNegotiationDone from ', from, answer)
+    try {
+      if (Peer.peer?.signalingState === "stable") {
+        console.warn("Signaling state is stable; skipping setLocalDescription.");
+        return;
+      }
 
+      console.log("Setting local description with answer:", answer);
+      await Peer.setLocalDescription(answer);
+    } catch (error) {
+      console.error("Failed to set local description:", error);
+    }
+  }, [socket])
 
   useEffect(() => {
     socket.on('user-joined', handleNewUserJoin);
@@ -167,18 +185,14 @@ const Home = () => {
     socket.on('incoming-call', handleIncommingCall)
     socket.on('call-accepted', handleCallAccepted)
     socket.on('call-declined', handleCallDeclined)
-   
+
     socket.on('negotiation-needed', async ({ offer, from }) => {
-      
+
       const answer = await Peer.getAnswer(offer);
 
       socket.emit('negotiation-done', { answer, to: from });
     });
-    socket.on('negotiation-done', async ({from, answer }) => {
-      
-      console.log('>>>>>>>>>>> negotiation done from ',from,"with ans", answer)
-      await Peer.setLocalDescription(answer)
-    });
+    socket.on('negotiation-done', handleNegotiationDone);
 
     Peer.peer?.addEventListener('track', handleTrackEvent);
     Peer.peer?.addEventListener('negotiationneeded', handleNegotiationNeeded);
@@ -195,12 +209,12 @@ const Home = () => {
       socket.off('negotiation-needed');
       socket.off('negotiation-done');
 
-      
+
       Peer.peer?.removeEventListener('track', handleTrackEvent);
       Peer.peer?.removeEventListener("negotiationneeded", handleNegotiationNeeded);
 
     };
-  }, [socket,  handleNewUserJoin, handleJoinedRoom, handleUserJoined, handleIncommingCall, handleCallAccepted, handleCallDeclined, handleIceCandidate,  handleTrackEvent, handleNegotiationNeeded]);
+  }, [socket, handleNewUserJoin, handleJoinedRoom, handleUserJoined, handleIncommingCall, handleCallAccepted, handleCallDeclined, handleTrackEvent, handleNegotiationNeeded]);
 
   useEffect(() => {
 
@@ -217,7 +231,10 @@ const Home = () => {
     audioRef.current = new Audio(tune);
   }, []);
 
-
+  useEffect(() => {
+    console.log('>>>>>>>>>>>my video stream', myVideoStream)
+    console.log('>>>>>>>>>>>remote video stream', remoteVideoStream)
+  }, [myVideoStream, remoteVideoStream])
 
 
 
@@ -253,9 +270,9 @@ const Home = () => {
             setAcceptCall={setAcceptCall}
             offer={incommingOffer}
             setMyVideoStream={setMyVideoStream}
-            
+
           />
-          
+
         }
 
         {
@@ -265,7 +282,7 @@ const Home = () => {
 
       </div>
 
-      
+
       <div className=" bg-violet-50 h-screen w-full flex justify-center items-center gap-4">
         {myVideoStream && (
           <div className="w-1/2 h-1/2">
