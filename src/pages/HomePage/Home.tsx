@@ -284,7 +284,7 @@ const Home = () => {
 
       {
         isCallingStart &&
-        <div className="absolute bg-violet-500 h-screen w-fit flex ">
+        <div className="absolute bg-violet-100 h-screen w-fit flex ">
           {myVideoStream && (
             <div className="w-1/12 h-1/12 absolute top-0">
               <ReactPlayer
