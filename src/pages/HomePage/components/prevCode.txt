@@ -7,13 +7,14 @@ import useAllUsers from "../../hooks/allUsers"
 import tune from '../../assets/music/tune.mp3'
 import CallCard from "./components/CallCard"
 import CallingCard from "./components/CallingCard"
-import ReactPlayer from "react-player"
-import Peer from "../../utils/Peer"
+import { usePeer } from "../../context/Peer"
+// import ReactPlayer from "react-player"
 
 
 const Home = () => {
   const socket = useSocket()
   const { currentUser, } = useCurrentUser();
+  const { peer, createOffer, createAnswer, setRemoteAnswer, sendStream, remoteStream, setRemoteStream, addIceCandidate } = usePeer();
   const { users, } = useAllUsers();
   const [showCallCard, setShowCallCard] = useState(false)
   const [incommingCallFrom, setIncommingCallFrom] = useState("")
@@ -22,24 +23,11 @@ const Home = () => {
   const [callTo, setCallTo] = useState<string>("")
   const [calling, setcalling] = useState<boolean>(false)
   const [myVideoStream, setMyVideoStream] = useState<any>(null)
-  const [remoteVideoStream, setRemoteVideoStream] = useState<any>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [incommingOffer, setIncommingOffer] = useState<RTCSessionDescriptionInit | null>(null)
   // const [remoteStreamLocal, setRemoteStreamLocal] = useState<MediaStream | null>(null);
 
   console.log('>>>>>>>>>>>', declineCall, acceptCall)
-
-  // Get user media stream
-  const getUserMediaStream = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      setMyVideoStream(stream);
-      return stream;
-    } catch (error) {
-      console.error("Error accessing media devices:", error);
-    }
-  };
-
   //socket functions
   const handleNewUserJoin = async ({ roomId, emailId }: { roomId: string, emailId: string }) => {
     console.log("new user joined", roomId, emailId);
@@ -65,10 +53,9 @@ const Home = () => {
       const stream = await getUserMediaStream();
       if (stream) {
         setMyVideoStream(stream);
-        const offer = await Peer.getOffer();
-        // await sendStream(stream);
-        // const offer = await createOffer();
-        // await peer.setLocalDescription(offer);
+        await sendStream(stream);
+        const offer = await createOffer();
+        await peer.setLocalDescription(offer);
         socket?.emit('call-user', { offer, emailId: 'currentUser?.email', to: toEmail });
         setcalling(true);
         setCallTo(toEmail);
@@ -87,7 +74,6 @@ const Home = () => {
     setShowCallCard(true)
     setIncommingCallFrom(from)
     setIncommingOffer(offer)
-
     try {
       audioRef?.current?.play().catch((err) => {
         console.error("Audio playback failed:", err);
@@ -102,30 +88,25 @@ const Home = () => {
     console.log('Call accepted with answer now try to set remote answer', ans);
     setcalling(false)
     try {
-      // await setRemoteAnswer(ans);
-      Peer.setLocalDescription(ans)
+      await setRemoteAnswer(ans);
     } catch (error) {
-      console.log('>>>>>>>>>>> Error in set in local description ', error)
+      console.log('>>>>>>>>>>> line 93 handleCallAccepted ', error)
     }
     const stream = await getUserMediaStream();
     if (stream) {
       setMyVideoStream(stream);
-
-      for(const track of stream.getTracks()) {
-        Peer.peer?.addTrack(track, stream);
-      
+      await sendStream(stream);
     }
 
-    
-    // peer.addEventListener('track', handleTrackEvent);
-  }}
+    // Ensure we're listening for tracks after setting the remote description
+    peer.addEventListener('track', handleTrackEvent);
+  }
 
 
   const handleTrackEvent = useCallback((event: RTCTrackEvent) => {
     console.log('Track event received:', event);
     if (event.streams && event.streams[0]) {
-        setRemoteVideoStream(event.streams[0]);
-      // setRemoteStream(event.streams[0]);
+      setRemoteStream(event.streams[0]);
     } else {
       console.warn('No streams in track event');
     }
@@ -151,24 +132,32 @@ const Home = () => {
   // Handle negotiation needed event
   const handleNegotiationNeeded = useCallback(async () => {
     try {
-      
-      const offer = await Peer.getOffer();
-      socket.emit('negotiation-needed', { offer, to: callTo });
+      await createOffer();
+      socket.emit('negotiation-needed', { offer: peer.localDescription, to: callTo });
     } catch (err) {
       console.error('Error during negotiation:', err);
     }
-  }, [, socket, callTo, ]);
+  }, [peer, socket, callTo, createOffer]);
 
 
-  
+  // Get user media stream
+  const getUserMediaStream = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      setMyVideoStream(stream);
+      return stream;
+    } catch (error) {
+      console.error("Error accessing media devices:", error);
+    }
+  };
 
 
-  // peer.addEventListener("icecandidate", (event) => {
-  //   if (event.candidate) {
-  //     // console.log("New ICE Candidate:", event.candidate);
-  //     socket.emit("ice-candidate", { candidate: event.candidate, to: callTo });
-  //   }
-  // });
+  peer.addEventListener("icecandidate", (event) => {
+    if (event.candidate) {
+      // console.log("New ICE Candidate:", event.candidate);
+      socket.emit("ice-candidate", { candidate: event.candidate, to: callTo });
+    }
+  });
 
 
 
@@ -179,26 +168,23 @@ const Home = () => {
     socket.on('incoming-call', handleIncommingCall)
     socket.on('call-accepted', handleCallAccepted)
     socket.on('call-declined', handleCallDeclined)
-    // socket.on('ice-candidate', ({ candidate }) => {
+    socket.on('ice-candidate', ({ candidate }) => {
       // console.log('>>>>>>>>>>>candidate from homne 143', candidate)
-      // addIceCandidate(new RTCIceCandidate(candidate));
-    // });
+      addIceCandidate(new RTCIceCandidate(candidate));
+    });
     socket.on('negotiation-needed', async ({ offer, from }) => {
-      // await peer.setRemoteDescription(offer);
-      // const answer = await createAnswer(offer);
-      const answer = await Peer.getAnswer(offer);
-
+      await peer.setRemoteDescription(offer);
+      const answer = await createAnswer(offer);
       socket.emit('negotiation-done', { answer, to: from });
     });
-    socket.on('negotiation-done', async ({from, answer }) => {
-      // await setRemoteAnswer(answer);
-      console.log('>>>>>>>>>>> negotiation done from ',from,"with ans", answer)
-      await Peer.setLocalDescription(answer)
+    socket.on('negotiation-done', async ({ answer }) => {
+      await setRemoteAnswer(answer);
     });
 
-    Peer.peer?.addEventListener('track', handleTrackEvent);
-    // peer.addEventListener('icecandidate', handleIceCandidate);
-    Peer.peer?.addEventListener('negotiationneeded', handleNegotiationNeeded);
+
+    peer.addEventListener('icecandidate', handleIceCandidate);
+    peer.addEventListener('track', handleTrackEvent);
+    peer.addEventListener('negotiationneeded', handleNegotiationNeeded);
 
 
 
@@ -212,12 +198,12 @@ const Home = () => {
       socket.off('negotiation-needed');
       socket.off('negotiation-done');
 
-      // peer.removeEventListener("icecandidate", handleIceCandidate);  
-      Peer.peer?.removeEventListener('track', handleTrackEvent);
-      Peer.peer?.removeEventListener("negotiationneeded", handleNegotiationNeeded);
+      peer.removeEventListener("icecandidate", handleIceCandidate);
+      peer.removeEventListener('track', handleTrackEvent);
+      peer.removeEventListener("negotiationneeded", handleNegotiationNeeded);
 
     };
-  }, [socket,  handleNewUserJoin, handleJoinedRoom, handleUserJoined, handleIncommingCall, handleCallAccepted, handleCallDeclined, handleIceCandidate,  handleTrackEvent, handleNegotiationNeeded]);
+  }, [socket, peer, handleNewUserJoin, handleJoinedRoom, handleUserJoined, handleIncommingCall, handleCallAccepted, handleCallDeclined, handleIceCandidate, addIceCandidate, handleTrackEvent, handleNegotiationNeeded]);
 
   useEffect(() => {
 
@@ -233,6 +219,13 @@ const Home = () => {
   useEffect(() => {
     audioRef.current = new Audio(tune);
   }, []);
+  useEffect(() => {
+    console.log("My Video Stream:", myVideoStream);
+  }, [myVideoStream]);
+
+  useEffect(() => {
+    console.log("Remote Stream:", remoteStream);
+  }, [remoteStream]);
 
 
 
@@ -262,17 +255,16 @@ const Home = () => {
           showCallCard &&
           <CallCard
             socket={socket}
-            Peer={Peer}
             from={incommingCallFrom}
             setShowCallCard={setShowCallCard}
             audioRef={audioRef}
             setDeclineCall={setDeclineCall}
             setAcceptCall={setAcceptCall}
+            createAnswer={createAnswer}
             offer={incommingOffer}
             setMyVideoStream={setMyVideoStream}
-            
+            sendStream={sendStream}
           />
-          
         }
 
         {
@@ -282,18 +274,33 @@ const Home = () => {
 
       </div>
       {
-        (myVideoStream ) && (
+        (myVideoStream || remoteStream) && (
           <div className="absolute z-50 bg-violet-50 h-screen w-full flex flex-col justify-center items-center gap-4">
-            <ReactPlayer url={myVideoStream} playing muted />
-           
-          </div>
-        )
-      }
-      {
-        (remoteVideoStream ) && (
-          <div className="absolute z-50 bg-violet-50 h-screen w-full flex flex-col justify-center items-center gap-4">
-            <ReactPlayer url={remoteVideoStream} playing muted />
-           
+            {
+              myVideoStream && (
+                <video
+                  ref={(ref) => {
+                    if (ref) ref.srcObject = myVideoStream;
+                  }}
+                  autoPlay
+                  muted
+                  width="50"
+                  height="50"
+                />
+              )
+            }
+            {
+              remoteStream && (
+                <video
+                  ref={(ref) => {
+                    if (ref) ref.srcObject = remoteStream;
+                  }}
+                  autoPlay
+                  width="400"
+                  height="300"
+                />
+              )
+            }
           </div>
         )
       }
@@ -301,5 +308,4 @@ const Home = () => {
 
   )
 }
-
 export default Home

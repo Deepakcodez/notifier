@@ -3,31 +3,31 @@ import React from "react";
 
 
 interface callCardProps {
-    socket: any
+    socket: any;
+    Peer: any;
     from: string;
     setShowCallCard: React.Dispatch<React.SetStateAction<boolean>>,
     audioRef: React.MutableRefObject<HTMLAudioElement | null>;
     setDeclineCall: React.Dispatch<React.SetStateAction<boolean>>,
     setAcceptCall: React.Dispatch<React.SetStateAction<boolean>>,
-    createAnswer: (offer: RTCSessionDescriptionInit) => Promise<RTCSessionDescriptionInit>;
     offer: RTCSessionDescriptionInit | null;
-    setMyVideoStream : React.Dispatch<any>
-    sendStream:(stream: MediaStream) => Promise<void>;
+    setMyVideoStream: React.Dispatch<any>
+
 
 }
 
 
 const CallCard: React.FC<callCardProps> = ({
     socket,
+    Peer,
     from,
     setShowCallCard,
     audioRef,
     setDeclineCall,
     setAcceptCall,
-    createAnswer,
     offer,
     setMyVideoStream,
-    sendStream
+
 
 
 }) => {
@@ -55,24 +55,16 @@ const CallCard: React.FC<callCardProps> = ({
         }
         setShowCallCard(false)
         setAcceptCall(true)
-        const ans = await createAnswer(offer as RTCSessionDescriptionInit)
-        ans && socket.emit('call-accepted', { emailId: from, ans })
-        
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
             console.log('Stream obtained from receiver:', stream);
             setMyVideoStream(stream);
-            await sendStream(stream);
-
-            // Ensure tracks are enabled
-            stream.getTracks().forEach(track => {
-                track.enabled = true;
-            });
         } catch (error) {
             console.error('Error getting user media:', error);
         }
 
-
+        const ans = await Peer.getAnswer(offer);
+        ans && socket.emit('call-accepted', { emailId: from, ans })
 
     }
 
