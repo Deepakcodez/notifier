@@ -37,16 +37,16 @@ export const PeerProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     const setRemoteAnswer = async (answer: RTCSessionDescriptionInit) => {
-        if (peer.signalingState !== "have-local-offer") {
-            console.warn("Skipping setRemoteAnswer: Incorrect signaling state", peer.signalingState);
-            return;
-        }
-        try {
-            await peer.setRemoteDescription(answer);
-            console.log("Remote answer set successfully");
-        } catch (error) {
-            console.error("Failed to set remote answer:", error);
-        }
+        if (peer.signalingState === "have-local-offer") {
+            try {
+              await peer.setRemoteDescription(answer);
+              console.log("Remote answer set successfully");
+            } catch (error) {
+              console.error("Failed to set remote answer:", error);
+            }
+          } else {
+            console.warn("Attempted to set remote answer in incorrect state:", peer.signalingState);
+          }
     }
 
 

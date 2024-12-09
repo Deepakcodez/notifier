@@ -11,8 +11,9 @@ interface callCardProps {
     setAcceptCall: React.Dispatch<React.SetStateAction<boolean>>,
     createAnswer: (offer: RTCSessionDescriptionInit) => Promise<RTCSessionDescriptionInit>;
     offer: RTCSessionDescriptionInit | null;
-    setMyVideoStream : React.Dispatch<any>
-    sendStream:(stream: MediaStream) => Promise<void>
+    setMyVideoStream : React.Dispatch<any>;
+    sendStream:(stream: MediaStream) => Promise<void>;
+    peer:RTCPeerConnection
 
 }
 
@@ -27,7 +28,8 @@ const CallCard: React.FC<callCardProps> = ({
     createAnswer,
     offer,
     setMyVideoStream,
-    sendStream
+    sendStream,
+    peer
 
 
 }) => {
@@ -56,6 +58,9 @@ const CallCard: React.FC<callCardProps> = ({
         setShowCallCard(false)
         setAcceptCall(true)
         const ans = await createAnswer(offer as RTCSessionDescriptionInit)
+        await peer.setRemoteDescription(offer as RTCSessionDescriptionInit);
+        await peer.setLocalDescription(ans);
+
         ans && socket.emit('call-accepted', { emailId: from, ans })
 
         const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });

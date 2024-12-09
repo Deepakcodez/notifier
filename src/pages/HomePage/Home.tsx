@@ -49,15 +49,20 @@ const Home = () => {
   }
 
   const handleCallUser = async (toEmail: string) => {
-    const stream = await getUserMediaStream();
-    if (stream) {
-      setMyVideoStream(stream);
-      await sendStream(stream);
-      const offer = await createOffer();
-      socket.emit('call-user', { offer, emailId: currentUser?.email, to: toEmail });
-      setcalling(true);
-      setCallTo(toEmail);
-    }
+    try {
+      const stream = await getUserMediaStream();
+      if (stream) {
+          setMyVideoStream(stream);
+          await sendStream(stream);
+          const offer = await createOffer();
+          await peer.setLocalDescription(offer);
+          socket?.emit('call-user', { offer, emailId: 'currentUser?.email', to: toEmail }); 
+          setcalling(true);
+          setCallTo(toEmail);
+      }
+  } catch (error) {
+      console.error("Error in handleCallUser:", error);
+  }
   }
 
 
@@ -243,6 +248,7 @@ const Home = () => {
             offer={incommingOffer}
             setMyVideoStream={setMyVideoStream}
             sendStream={sendStream}
+            peer={peer}
           />
         }
 
