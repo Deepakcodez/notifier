@@ -32,8 +32,8 @@ const Home = () => {
   const getUserMediaStream = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      setMyVideoStream((prev: any) => {
-        console.log('>>>>>>>>>>>', prev)
+      setMyVideoStream((prev:any)=> { 
+        console.log('>>>>>>>>>>>prev', prev)
         return stream
       });
       return stream;
@@ -42,8 +42,9 @@ const Home = () => {
     }
   };
 
-  const sendStreams = useCallback(() => {
-    for (const track of myVideoStream.getTracks()) {
+  const sendStreams = useCallback(async() => {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    for (const track of stream.getTracks()) {
       Peer.peer?.addTrack(track, myVideoStream);
     }
   }, [myVideoStream]);
@@ -71,16 +72,13 @@ const Home = () => {
   const handleCallUser = async (toEmail: string) => {
     try {
       const stream = await getUserMediaStream();
-      if (stream) {
+      
         setMyVideoStream(stream);
         const offer = await Peer.getOffer();
-        // await sendStream(stream);
-        // const offer = await createOffer();
-        // await peer.setLocalDescription(offer);
         socket?.emit('call-user', { offer, emailId: 'currentUser?.email', to: toEmail });
         setcalling(true);
         setCallTo(toEmail);
-      }
+      
     } catch (error) {
       console.error("Error in handleCallUser:", error);
     }
@@ -115,12 +113,14 @@ const Home = () => {
       console.log('>>>>>>>>>>> Error in set in local description ', error)
     }
     const stream = await getUserMediaStream();
-    if (stream) {
-      setMyVideoStream(stream);
-      sendStreams();
-
-
+    if (stream) { 
+      // setMyVideoStream(stream);
+      for (const track of stream.getTracks()) {
+        Peer.peer?.addTrack(track, stream);
+      }
       // peer.addEventListener('track', handleTrackEvent);
+    }else{
+      console.log('>>>>>>>>>>>not stream')
     }
   }
 
@@ -163,7 +163,7 @@ const Home = () => {
     }
   }, [, socket, callTo,]);
 
-  const handleNegotiationDone = useCallback(async ({ from, answer }:{from:string, answer:RTCSessionDescriptionInit}) => {
+  const handleNegotiationDone = useCallback(async ({ from, answer }: { from: string, answer: RTCSessionDescriptionInit }) => {
     console.log('>>>>>>>>>>>handleNegotiationDone from ', from, answer)
     try {
       if (Peer.peer?.signalingState === "stable") {
