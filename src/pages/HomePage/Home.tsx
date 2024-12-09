@@ -272,6 +272,7 @@ const Home = () => {
             setAcceptCall={setAcceptCall}
             offer={incommingOffer}
             setMyVideoStream={setMyVideoStream}
+            setcallingStarted={setIsCallingStart}
 
           />
 

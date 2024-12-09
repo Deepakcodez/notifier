@@ -11,7 +11,8 @@ interface callCardProps {
     setDeclineCall: React.Dispatch<React.SetStateAction<boolean>>,
     setAcceptCall: React.Dispatch<React.SetStateAction<boolean>>,
     offer: RTCSessionDescriptionInit | null;
-    setMyVideoStream: React.Dispatch<any>
+    setMyVideoStream: React.Dispatch<any>;
+    setcallingStarted: React.Dispatch<React.SetStateAction<boolean>>,
 }
 
 
@@ -25,6 +26,7 @@ const CallCard: React.FC<callCardProps> = ({
     setAcceptCall,
     offer,
     setMyVideoStream,
+    setcallingStarted
 }) => {
 
 
@@ -44,6 +46,7 @@ const CallCard: React.FC<callCardProps> = ({
 
     const onAccept = async () => {
         console.log('>>>>>>>>>>>trying to accept call with offer', offer)
+        setcallingStarted(true)
         if (audioRef.current) {
             audioRef.current.pause();
             audioRef.current.currentTime = 0;
