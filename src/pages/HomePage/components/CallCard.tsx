@@ -12,6 +12,7 @@ interface callCardProps {
     createAnswer: (offer: RTCSessionDescriptionInit) => Promise<RTCSessionDescriptionInit>;
     offer: RTCSessionDescriptionInit | null;
     setMyVideoStream : React.Dispatch<any>
+    sendStream:(stream: MediaStream) => Promise<void>
 
 }
 
@@ -25,7 +26,8 @@ const CallCard: React.FC<callCardProps> = ({
     setAcceptCall,
     createAnswer,
     offer,
-    setMyVideoStream
+    setMyVideoStream,
+    sendStream
 
 
 }) => {
@@ -59,6 +61,9 @@ const CallCard: React.FC<callCardProps> = ({
         const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
         console.log('>>>>>>>>>>> from calcard', stream)
         setMyVideoStream(stream)
+
+        await sendStream(stream);
+
 
 
     }

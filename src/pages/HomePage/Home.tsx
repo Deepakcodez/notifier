@@ -228,6 +228,7 @@ const Home = () => {
             createAnswer={createAnswer}
             offer={incommingOffer}
             setMyVideoStream={setMyVideoStream}
+            sendStream={sendStream}
           />
         }
 
