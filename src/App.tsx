@@ -7,8 +7,11 @@ function App() {
 
   return (
     <>
+    <div className='relative'>
       <Router />
       <Toaster />
+    </div>
+
     </>
   )
 }

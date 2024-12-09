@@ -197,8 +197,8 @@ const Home = () => {
 
 
   return (
-    <>
-      <div className="relative w-full min-h-screen h-auto flex gap-12 flex-wrap  bg-violet-100 px-12 py-12">
+    <div className="relative w-full min-h-screen h-auto flex gap-12 flex-wrap  bg-violet-100 px-12 py-12">
+      <div className="relative w-full h-full flex gap-12 flex-wrap ">
 
         {
           users.filter((user) => user.email !== currentUser?.email)
@@ -268,7 +268,7 @@ const Home = () => {
             </div>
           )
         }
-    </>
+    </div>
 
   )
 }
