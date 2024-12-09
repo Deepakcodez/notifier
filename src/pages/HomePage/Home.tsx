@@ -8,7 +8,7 @@ import tune from '../../assets/music/tune.mp3'
 import CallCard from "./components/CallCard"
 import CallingCard from "./components/CallingCard"
 import { usePeer } from "../../context/Peer"
-import ReactPlayer from "react-player"
+// import ReactPlayer from "react-player"
 
 
 const Home = () => {
@@ -235,18 +235,37 @@ const Home = () => {
         <CallingCard callingTo={callTo} />
       }
       {
-        myVideoStream || remoteStream &&
-        <div className="absolute z-50 bg-violet-50 h-screen w-full flex flex-col justify-center items-center gap-4">
-          {
-            myVideoStream &&
-            <ReactPlayer url={myVideoStream} playing muted width="400px" height="300px" />
-          }
-          {
-            remoteStream &&
-            <ReactPlayer url={remoteStream} playing width="400px" height="300px" />
-          }
-        </div>
+  (myVideoStream || remoteStream) && (
+    <div className="absolute z-50 bg-violet-50 h-screen w-full flex flex-col justify-center items-center gap-4">
+      {
+        myVideoStream && (
+          <video
+            ref={(ref) => {
+              if (ref) ref.srcObject = myVideoStream;
+            }}
+            autoPlay
+            muted
+            width="400"
+            height="300"
+          />
+        )
       }
+      {
+        remoteStream && (
+          <video
+            ref={(ref) => {
+              if (ref) ref.srcObject = remoteStream;
+            }}
+            autoPlay
+            width="400"
+            height="300"
+          />
+        )
+      }
+    </div>
+  )
+}
+
 
 
 
