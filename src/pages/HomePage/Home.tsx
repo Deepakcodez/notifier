@@ -126,15 +126,15 @@ const Home = () => {
 
 
   // Handle negotiation needed event
-  const handleNegotiationNeeded = useCallback(async () => {
-    try {
-      const offer = await peer.createOffer();
-      await peer.setLocalDescription(offer);
-      socket.emit('call-user', { offer: peer.localDescription, emailId: currentUser?.email, to: callTo });
-    } catch (err) {
-      console.error('Error during negotiation:', err);
-    }
-  }, [peer, socket, callTo]);
+  // const handleNegotiationNeeded = useCallback(async () => {
+  //   try {
+  //     const offer = await peer.createOffer();
+  //     await peer.setLocalDescription(offer);
+  //     socket.emit('call-user', { offer: peer.localDescription, emailId: currentUser?.email, to: callTo });
+  //   } catch (err) {
+  //     console.error('Error during negotiation:', err);
+  //   }
+  // }, [peer, socket, callTo]);
 
 
   // Get user media stream
@@ -171,7 +171,7 @@ const Home = () => {
     });
     peer.addEventListener('icecandidate', handleIceCandidate);
     peer.addEventListener('track', handleTrackEvent);
-    peer.addEventListener('negotiationneeded', handleNegotiationNeeded);
+    // peer.addEventListener('negotiationneeded', handleNegotiationNeeded);
 
 
 
@@ -186,7 +186,7 @@ const Home = () => {
 
       peer.removeEventListener("icecandidate", handleIceCandidate);
       peer.removeEventListener('track', handleTrackEvent);
-      peer.removeEventListener("negotiationneeded", handleNegotiationNeeded);
+      // peer.removeEventListener("negotiationneeded", handleNegotiationNeeded);
 
     };
   }, [socket, peer, handleNewUserJoin, handleJoinedRoom, handleUserJoined, handleIncommingCall, handleCallAccepted, handleCallDeclined, handleIceCandidate, addIceCandidate]);
