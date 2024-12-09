@@ -42,12 +42,7 @@ const Home = () => {
     }
   };
 
-  const sendStreams = useCallback(async() => {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-    for (const track of stream.getTracks()) {
-      Peer.peer?.addTrack(track, myVideoStream);
-    }
-  }, [myVideoStream]);
+ 
 
   //socket functions
   const handleNewUserJoin = async ({ roomId, emailId }: { roomId: string, emailId: string }) => {
@@ -283,9 +278,9 @@ const Home = () => {
       </div>
 
 
-      <div className=" bg-violet-50 h-screen w-full flex justify-center items-center gap-4">
+      <div className="relative bg-violet-50 h-screen w-full flex  gap-4">
         {myVideoStream && (
-          <div className="w-1/2 h-1/2">
+          <div className="w-1/12 h-1/12 absolute top-0">
             <ReactPlayer
               url={myVideoStream}
               playing
@@ -297,14 +292,25 @@ const Home = () => {
           </div>
         )}
         {remoteVideoStream && (
-          <div className="w-1/2 h-1/2">
+          <div className="relative ">
             <ReactPlayer
               url={remoteVideoStream}
               playing
               width="100%"
               height="100%"
-              style={{ backgroundColor: 'green' }}
+              style={{ backgroundColor: '#9a5fff' }}
             />
+
+<div className="w-1/12 h-1/12 absolute top-0">
+            <ReactPlayer
+              url={myVideoStream}
+              playing
+              muted
+              width="100%"
+              height="100%"
+              style={{ backgroundColor: 'red' }}
+            />
+          </div>
           </div>
         )}
       </div>
