@@ -287,7 +287,7 @@ const Home = () => {
 
       {
         isCallingStart &&
-        <div className="absolute bg-violet-100 h-screen w-[100vw] flex ">
+        <div className="absolute bg-violet-100/50 backdrop h-screen w-[100vw] flex ">
           
           {remoteVideoStream && (
             <div className="relative ">
