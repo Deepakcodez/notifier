@@ -132,7 +132,7 @@ const Home = () => {
   // Handle negotiation needed event
   const handleNegotiationNeeded = useCallback(async () => {
     try {
-      const offer = await createOffer();
+      await createOffer();
       socket.emit('negotiation-needed', { offer: peer.localDescription, to: callTo });
     } catch (err) {
       console.error('Error during negotiation:', err);
