@@ -287,19 +287,8 @@ const Home = () => {
 
       {
         isCallingStart &&
-        <div className="absolute bg-violet-100 h-screen w-fit flex ">
-          {myVideoStream && (
-            <div className="w-1/12 h-1/12 absolute top-0">
-              <ReactPlayer
-                url={myVideoStream}
-                playing
-                muted
-                width="100%"
-                height="100%"
-                style={{ backgroundColor: 'red' }}
-              />
-            </div>
-          )}
+        <div className="absolute bg-violet-100 h-screen w-[100vw] flex ">
+          
           {remoteVideoStream && (
             <div className="relative ">
               <ReactPlayer
