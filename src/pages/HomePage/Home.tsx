@@ -216,7 +216,7 @@ const Home = () => {
 
 
   return (
-    <div className="relative w-full min-h-screen h-auto flex gap-12 flex-wrap  bg-violet-100 px-12 py-12">
+    <div className="relative w-full min-h-screen h-auto   bg-violet-100 px-12 ">
       <div className="relative w-full h-full flex gap-12 flex-wrap ">
 
         {
@@ -259,7 +259,7 @@ const Home = () => {
       </div>
       {
         (myVideoStream || remoteStream) && (
-          <div className="absolute z-50 bg-violet-50 h-screen w-full flex flex-col justify-center items-center gap-4">
+          <div className="absolute z-50 bg-violet-50 min-h-screen h-full w-full flex flex-col justify-center items-center gap-4">
             {
               myVideoStream && (
                 <video
