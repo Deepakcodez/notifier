@@ -79,7 +79,8 @@ const Home = () => {
   }
 
   const handleCallAccepted = async ({ ans }: { ans: RTCSessionDescriptionInit }) => {
-    console.log('Call accepted with answer', ans);
+    // console.log('Call accepted with answer', ans);
+    setcalling(false)
     await setRemoteAnswer(ans);
     const stream = await getUserMediaStream();
     if (stream) {
@@ -89,7 +90,7 @@ const Home = () => {
   }
 
   const handleCallDeclined = async ({ from }: { from: string, }) => {
-    console.log("call declined from", from, "to you",);
+    // console.log("call declined from", from, "to you",);
     toast.error(`${from} declined your call`)
     setDeclineCall(false)
     setcalling(false)
@@ -120,7 +121,7 @@ const Home = () => {
   // Get user media stream
   const getUserMediaStream = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       setMyVideoStream(stream);
       return stream;
     } catch (error) {
@@ -131,7 +132,7 @@ const Home = () => {
 
   peer.addEventListener("icecandidate", (event) => {
     if (event.candidate) {
-      console.log("New ICE Candidate:", event.candidate);
+      // console.log("New ICE Candidate:", event.candidate);
       socket.emit("ice-candidate", { candidate: event.candidate, to: callTo });
     }
   });
@@ -146,7 +147,7 @@ const Home = () => {
     socket.on('call-accepted', handleCallAccepted)
     socket.on('call-declined', handleCallDeclined)
     socket.on('ice-candidate', ({ candidate }) => {
-      console.log('>>>>>>>>>>>candidate from homne 143', candidate)
+      // console.log('>>>>>>>>>>>candidate from homne 143', candidate)
       addIceCandidate(new RTCIceCandidate(candidate));
     });
     peer.addEventListener('icecandidate', handleIceCandidate);
@@ -196,7 +197,7 @@ const Home = () => {
 
 
   return (
-    <div className="relative w-full h-screen flex gap-12 flex-wrap  bg-violet-100 px-12 py-12">
+    <div className="relative w-full min-h-screen h-auto flex gap-12 flex-wrap  bg-violet-100 px-12 py-12">
 
       {
         users.filter((user) => user.email !== currentUser?.email)
@@ -225,6 +226,7 @@ const Home = () => {
           setAcceptCall={setAcceptCall}
           createAnswer={createAnswer}
           offer={incommingOffer}
+          setMyVideoStream={setMyVideoStream}
         />
       }
 
@@ -232,17 +234,20 @@ const Home = () => {
         calling &&
         <CallingCard callingTo={callTo} />
       }
-
       {
-        myVideoStream &&
-        <ReactPlayer url={myVideoStream} playing muted width="400px" height="300px" />
+        myVideoStream || remoteStream &&
+        <div className="absolute z-50 bg-violet-50 h-screen w-full flex flex-col justify-center items-center gap-4">
+          {
+            myVideoStream &&
+            <ReactPlayer url={myVideoStream} playing muted width="400px" height="300px" />
+          }
+          {
+            remoteStream &&
+            <ReactPlayer url={remoteStream} playing width="400px" height="300px" />
+          }
+        </div>
       }
 
-      {
-        remoteStream &&
-        <ReactPlayer url={remoteStream} playing width="400px" height="300px" />
-
-      }
 
 
     </div>

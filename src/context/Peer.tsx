@@ -103,11 +103,13 @@ export const PeerProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Log remote stream changes
     useEffect(() => {
-        console.log("Remote Stream:", remoteStream);
         if (remoteStream) {
-            console.log("Remote Stream is active:", remoteStream.active);
+          console.log("Remote Stream is active:", remoteStream.active);
+          remoteStream.getTracks().forEach(track => {
+            console.log(`Track kind: ${track.kind}, enabled: ${track.enabled}, readyState: ${track.readyState}`);
+          });
         }
-    }, [remoteStream]);
+      }, [remoteStream]);
 
     return (
         <PeerContext.Provider
