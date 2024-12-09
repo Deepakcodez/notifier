@@ -25,7 +25,6 @@ const Home = () => {
   const [remoteVideoStream, setRemoteVideoStream] = useState<any>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [incommingOffer, setIncommingOffer] = useState<RTCSessionDescriptionInit | null>(null)
-  // const [remoteStreamLocal, setRemoteStreamLocal] = useState<MediaStream | null>(null);
 
   console.log('>>>>>>>>>>>', declineCall, acceptCall)
 
@@ -160,17 +159,6 @@ const Home = () => {
   }, [, socket, callTo, ]);
 
 
-  
-
-
-  // peer.addEventListener("icecandidate", (event) => {
-  //   if (event.candidate) {
-  //     // console.log("New ICE Candidate:", event.candidate);
-  //     socket.emit("ice-candidate", { candidate: event.candidate, to: callTo });
-  //   }
-  // });
-
-
 
   useEffect(() => {
     socket.on('user-joined', handleNewUserJoin);
@@ -179,25 +167,20 @@ const Home = () => {
     socket.on('incoming-call', handleIncommingCall)
     socket.on('call-accepted', handleCallAccepted)
     socket.on('call-declined', handleCallDeclined)
-    // socket.on('ice-candidate', ({ candidate }) => {
-      // console.log('>>>>>>>>>>>candidate from homne 143', candidate)
-      // addIceCandidate(new RTCIceCandidate(candidate));
-    // });
+   
     socket.on('negotiation-needed', async ({ offer, from }) => {
-      // await peer.setRemoteDescription(offer);
-      // const answer = await createAnswer(offer);
+      
       const answer = await Peer.getAnswer(offer);
 
       socket.emit('negotiation-done', { answer, to: from });
     });
     socket.on('negotiation-done', async ({from, answer }) => {
-      // await setRemoteAnswer(answer);
+      
       console.log('>>>>>>>>>>> negotiation done from ',from,"with ans", answer)
       await Peer.setLocalDescription(answer)
     });
 
     Peer.peer?.addEventListener('track', handleTrackEvent);
-    // peer.addEventListener('icecandidate', handleIceCandidate);
     Peer.peer?.addEventListener('negotiationneeded', handleNegotiationNeeded);
 
 
@@ -212,7 +195,7 @@ const Home = () => {
       socket.off('negotiation-needed');
       socket.off('negotiation-done');
 
-      // peer.removeEventListener("icecandidate", handleIceCandidate);  
+      
       Peer.peer?.removeEventListener('track', handleTrackEvent);
       Peer.peer?.removeEventListener("negotiationneeded", handleNegotiationNeeded);
 
@@ -281,22 +264,33 @@ const Home = () => {
         }
 
       </div>
-      {
-        (myVideoStream ) && (
-          <div className="absolute z-50 bg-violet-50 h-screen w-full flex flex-col justify-center items-center gap-4">
-            <ReactPlayer url={myVideoStream} playing muted />
-           
+
+      
+      <div className=" bg-violet-50 h-screen w-full flex justify-center items-center gap-4">
+        {myVideoStream && (
+          <div className="w-1/2 h-1/2">
+            <ReactPlayer
+              url={myVideoStream}
+              playing
+              muted
+              width="100%"
+              height="100%"
+              style={{ backgroundColor: 'red' }}
+            />
           </div>
-        )
-      }
-      {
-        (remoteVideoStream ) && (
-          <div className="absolute z-50 bg-violet-50 h-screen w-full flex flex-col justify-center items-center gap-4">
-            <ReactPlayer url={remoteVideoStream} playing muted />
-           
+        )}
+        {remoteVideoStream && (
+          <div className="w-1/2 h-1/2">
+            <ReactPlayer
+              url={remoteVideoStream}
+              playing
+              width="100%"
+              height="100%"
+              style={{ backgroundColor: 'green' }}
+            />
           </div>
-        )
-      }
+        )}
+      </div>
     </div>
 
   )

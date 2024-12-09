@@ -12,8 +12,6 @@ interface callCardProps {
     setAcceptCall: React.Dispatch<React.SetStateAction<boolean>>,
     offer: RTCSessionDescriptionInit | null;
     setMyVideoStream: React.Dispatch<any>
-
-
 }
 
 
@@ -27,9 +25,6 @@ const CallCard: React.FC<callCardProps> = ({
     setAcceptCall,
     offer,
     setMyVideoStream,
-
-
-
 }) => {
 
 
@@ -59,12 +54,20 @@ const CallCard: React.FC<callCardProps> = ({
             const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
             console.log('Stream obtained from receiver:', stream);
             setMyVideoStream(stream);
+            for (const track of stream.getTracks()) {
+                Peer.peer?.addTrack(track, stream);
+            }
+
         } catch (error) {
             console.error('Error getting user media:', error);
         }
 
+        
         const ans = await Peer.getAnswer(offer);
-        ans && socket.emit('call-accepted', { emailId: from, ans })
+        if (ans) {
+            await Peer.setLocalDescription(ans);
+            socket.emit('call-accepted', { emailId: from, ans });
+        }
 
     }
 
