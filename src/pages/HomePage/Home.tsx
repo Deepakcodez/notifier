@@ -44,7 +44,7 @@ const Home = () => {
 
   const sendStreams = useCallback(() => {
     for (const track of myVideoStream.getTracks()) {
-      Peer.peer?.addTrack(track, myStream);
+      Peer.peer?.addTrack(track, myVideoStream);
     }
   }, [myVideoStream]);
 
