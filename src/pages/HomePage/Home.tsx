@@ -87,11 +87,11 @@ const Home = () => {
   const handleCallAccepted = async ({ ans }: { ans: RTCSessionDescriptionInit }) => {
     console.log('Call accepted with answer now try to set remote answer', ans);
     setcalling(false)
-   try {
-     await setRemoteAnswer(ans);
-   } catch (error) {
-    console.log('>>>>>>>>>>> line 93 handleCallAccepted ', error)
-   }
+    try {
+      await setRemoteAnswer(ans);
+    } catch (error) {
+      console.log('>>>>>>>>>>> line 93 handleCallAccepted ', error)
+    }
     const stream = await getUserMediaStream();
     if (stream) {
       setMyVideoStream(stream);
@@ -130,15 +130,14 @@ const Home = () => {
 
 
   // Handle negotiation needed event
-  // const handleNegotiationNeeded = useCallback(async () => {
-  //   try {
-  //     const offer = await peer.createOffer();
-  //     await peer.setLocalDescription(offer);
-  //     socket.emit('call-user', { offer: peer.localDescription, emailId: currentUser?.email, to: callTo });
-  //   } catch (err) {
-  //     console.error('Error during negotiation:', err);
-  //   }
-  // }, [peer, socket, callTo]);
+  const handleNegotiationNeeded = useCallback(async () => {
+    try {
+      const offer = await createOffer();
+      socket.emit('negotiation-needed', { offer: peer.localDescription, to: callTo });
+    } catch (err) {
+      console.error('Error during negotiation:', err);
+    }
+  }, [peer, socket, callTo, createOffer]);
 
 
   // Get user media stream
@@ -173,9 +172,19 @@ const Home = () => {
       // console.log('>>>>>>>>>>>candidate from homne 143', candidate)
       addIceCandidate(new RTCIceCandidate(candidate));
     });
+    socket.on('negotiation-needed', async ({ offer, from }) => {
+      await peer.setRemoteDescription(new RTCSessionDescription(offer));
+      const answer = await createAnswer(offer);
+      socket.emit('negotiation-done', { answer, to: from });
+    });
+    socket.on('negotiation-done', async ({ answer }) => {
+      await setRemoteAnswer(answer);
+    });
+
+
     peer.addEventListener('icecandidate', handleIceCandidate);
     peer.addEventListener('track', handleTrackEvent);
-    // peer.addEventListener('negotiationneeded', handleNegotiationNeeded);
+    peer.addEventListener('negotiationneeded', handleNegotiationNeeded);
 
 
 
@@ -186,14 +195,15 @@ const Home = () => {
       socket.off('user-joined', handleUserJoined)
       socket.off('incoming-call', handleIncommingCall)
       socket.off('call-declined', handleCallDeclined)
-
+      socket.off('negotiation-needed');
+      socket.off('negotiation-done');
 
       peer.removeEventListener("icecandidate", handleIceCandidate);
       peer.removeEventListener('track', handleTrackEvent);
-      // peer.removeEventListener("negotiationneeded", handleNegotiationNeeded);
+      peer.removeEventListener("negotiationneeded", handleNegotiationNeeded);
 
     };
-  }, [socket, peer, handleNewUserJoin, handleJoinedRoom, handleUserJoined, handleIncommingCall, handleCallAccepted, handleCallDeclined, handleIceCandidate, addIceCandidate]);
+  }, [socket, peer, handleNewUserJoin, handleJoinedRoom, handleUserJoined, handleIncommingCall, handleCallAccepted, handleCallDeclined, handleIceCandidate, addIceCandidate, handleTrackEvent, handleNegotiationNeeded]);
 
   useEffect(() => {
 
