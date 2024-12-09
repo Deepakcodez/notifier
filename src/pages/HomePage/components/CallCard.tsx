@@ -53,12 +53,12 @@ const CallCard: React.FC<callCardProps> = ({
         }
         setShowCallCard(false)
         setAcceptCall(true)
-        const ans = await createAnswer(offer as RTCSessionDescriptionInit)
-        ans && socket.emit('call-accepted', { emailId: from, ans })
+        // const ans = await createAnswer(offer as RTCSessionDescriptionInit)
+        // ans && socket.emit('call-accepted', { emailId: from, ans })
 
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-        console.log('>>>>>>>>>>> from calcard', stream)
-        setMyVideoStream(stream)
+        // const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        // console.log('>>>>>>>>>>> from calcard', stream)
+        // setMyVideoStream(stream)
 
 
     }
