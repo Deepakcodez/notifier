@@ -25,6 +25,7 @@ const Home = () => {
   const [remoteVideoStream, setRemoteVideoStream] = useState<any>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [incommingOffer, setIncommingOffer] = useState<RTCSessionDescriptionInit | null>(null)
+  const [isCallingStart, setIsCallingStart] = useState<boolean>(false)
 
   console.log('>>>>>>>>>>>', declineCall, acceptCall)
 
@@ -32,7 +33,7 @@ const Home = () => {
   const getUserMediaStream = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      setMyVideoStream((prev:any)=> { 
+      setMyVideoStream((prev: any) => {
         console.log('>>>>>>>>>>>prev', prev)
         return stream
       });
@@ -42,7 +43,7 @@ const Home = () => {
     }
   };
 
- 
+
 
   //socket functions
   const handleNewUserJoin = async ({ roomId, emailId }: { roomId: string, emailId: string }) => {
@@ -67,15 +68,16 @@ const Home = () => {
   const handleCallUser = async (toEmail: string) => {
     try {
       const stream = await getUserMediaStream();
-      
-        setMyVideoStream(stream);
-        const offer = await Peer.getOffer();
-        socket?.emit('call-user', { offer, emailId: 'currentUser?.email', to: toEmail });
-        setcalling(true);
-        setCallTo(toEmail);
-      
+      setIsCallingStart(true)
+      setMyVideoStream(stream);
+      const offer = await Peer.getOffer();
+      socket?.emit('call-user', { offer, emailId: 'currentUser?.email', to: toEmail });
+      setcalling(true);
+      setCallTo(toEmail);
+
     } catch (error) {
       console.error("Error in handleCallUser:", error);
+      setIsCallingStart(false)
     }
   }
 
@@ -108,13 +110,13 @@ const Home = () => {
       console.log('>>>>>>>>>>> Error in set in local description ', error)
     }
     const stream = await getUserMediaStream();
-    if (stream) { 
+    if (stream) {
       // setMyVideoStream(stream);
       for (const track of stream.getTracks()) {
         Peer.peer?.addTrack(track, stream);
       }
       // peer.addEventListener('track', handleTrackEvent);
-    }else{
+    } else {
       console.log('>>>>>>>>>>>not stream')
     }
   }
@@ -127,11 +129,14 @@ const Home = () => {
 
     } else {
       console.warn('No streams in track event');
+      toast.error('TRY AGAIN')
+      setIsCallingStart(false)
     }
   }, []);
 
   const handleCallDeclined = async ({ from }: { from: string, }) => {
     // console.log("call declined from", from, "to you",);
+    setIsCallingStart(false)
     toast.error(`${from} declined your call`)
     setDeclineCall(false)
     setcalling(false)
@@ -234,16 +239,16 @@ const Home = () => {
 
 
   return (
-    <div className="relative w-full min-h-screen h-auto flex gap-12 flex-wrap  bg-violet-100 px-12 py-12">
-      <div className="relative w-full h-full flex gap-12 flex-wrap ">
+    <div className="relative w-full min-h-screen h-auto flex  flex-wrap  bg-violet-100">
+      <div className="relative w-full h-full flex  gap-1 md:gap-6 flex-wrap md:p-12 p-4">
 
         {
           users.filter((user) => user.email !== currentUser?.email)
             .map((user, index) => {
-              return <div key={index} className="flex flex-col justify-center items-center bg-white p-4 rounded-lg shadow-lg h-[12rem]  w-[15rem] gap-4">
+              return <div key={index} className="flex md:flex-col md:justify-center justify-between items-center bg-white p-4 rounded-lg shadow-lg md:h-[12rem] h-fit   md:w-[15rem] w-full  gap-4">
                 <div>
-                  <h1 className="text-2xl font-bold">{user.name}</h1>
-                  <p className="text-gray-500 text-sm">{user.email}</p>
+                  <h1 className="md:text-2xl  font-bold md:text-center">{user.name}</h1>
+                  <p className="text-gray-500 md:text-sm text-xs">{user.email}</p>
                 </div>
                 <div onClick={() => handleCallUser(user?.email)} >
                   <CallButons />
@@ -277,43 +282,46 @@ const Home = () => {
 
       </div>
 
+      {
+        isCallingStart &&
+        <div className="absolute bg-violet-500 h-screen w-fit flex ">
+          {myVideoStream && (
+            <div className="w-1/12 h-1/12 absolute top-0">
+              <ReactPlayer
+                url={myVideoStream}
+                playing
+                muted
+                width="100%"
+                height="100%"
+                style={{ backgroundColor: 'red' }}
+              />
+            </div>
+          )}
+          {remoteVideoStream && (
+            <div className="relative ">
+              <ReactPlayer
+                url={remoteVideoStream}
+                playing
+                width="100%"
+                height="100%"
+                style={{ backgroundColor: '#9a5fff' }}
+              />
 
-      <div className="relative bg-violet-50 h-screen w-full flex  gap-4">
-        {myVideoStream && (
-          <div className="w-1/12 h-1/12 absolute top-0">
-            <ReactPlayer
-              url={myVideoStream}
-              playing
-              muted
-              width="100%"
-              height="100%"
-              style={{ backgroundColor: 'red' }}
-            />
-          </div>
-        )}
-        {remoteVideoStream && (
-          <div className="relative ">
-            <ReactPlayer
-              url={remoteVideoStream}
-              playing
-              width="100%"
-              height="100%"
-              style={{ backgroundColor: '#9a5fff' }}
-            />
+              <div className="w-4/12 h-4/12 absolute top-0">
+                <ReactPlayer
+                  url={myVideoStream}
+                  playing
+                  muted
+                  width="100%"
+                  height="100%"
+                  style={{ backgroundColor: 'red' }}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      }
 
-<div className="w-1/12 h-1/12 absolute top-0">
-            <ReactPlayer
-              url={myVideoStream}
-              playing
-              muted
-              width="100%"
-              height="100%"
-              style={{ backgroundColor: 'red' }}
-            />
-          </div>
-          </div>
-        )}
-      </div>
     </div>
 
   )
