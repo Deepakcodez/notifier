@@ -64,6 +64,11 @@ const CallCard: React.FC<callCardProps> = ({
 
         await sendStream(stream);
 
+        // Ensure tracks are enabled
+        stream.getTracks().forEach(track => {
+            track.enabled = true;
+        });
+
 
 
     }

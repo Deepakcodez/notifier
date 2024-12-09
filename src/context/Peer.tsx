@@ -10,6 +10,7 @@ const PeerContext = React.createContext<{
     sendStream: (stream: MediaStream) => Promise<void>;
     remoteStream: MediaStream | null;
     addIceCandidate: (candidate: RTCIceCandidate) => Promise<void>;
+    setRemoteStream: (stream: MediaStream) => void;
 
 } | null>(null);
 
@@ -113,7 +114,7 @@ export const PeerProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     return (
         <PeerContext.Provider
-            value={{ peer, createOffer, createAnswer, setRemoteAnswer, sendStream, remoteStream, addIceCandidate }}>
+            value={{ peer, createOffer, createAnswer, setRemoteAnswer, sendStream, remoteStream, addIceCandidate , setRemoteStream}}>
             {children}
         </PeerContext.Provider>
     );

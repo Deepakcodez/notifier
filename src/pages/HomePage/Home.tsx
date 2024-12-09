@@ -14,7 +14,7 @@ import { usePeer } from "../../context/Peer"
 const Home = () => {
   const socket = useSocket()
   const { currentUser, } = useCurrentUser();
-  const { peer, createOffer, createAnswer, setRemoteAnswer, sendStream, remoteStream, addIceCandidate } = usePeer();
+  const { peer, createOffer, createAnswer, setRemoteAnswer, sendStream, remoteStream, setRemoteStream, addIceCandidate } = usePeer();
   const { users, } = useAllUsers();
   const [showCallCard, setShowCallCard] = useState(false)
   const [incommingCallFrom, setIncommingCallFrom] = useState("")
@@ -25,6 +25,7 @@ const Home = () => {
   const [myVideoStream, setMyVideoStream] = useState<any>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [incommingOffer, setIncommingOffer] = useState<RTCSessionDescriptionInit | null>(null)
+  // const [remoteStreamLocal, setRemoteStreamLocal] = useState<MediaStream | null>(null);
 
   console.log('>>>>>>>>>>>', declineCall, acceptCall)
   //socket functions
@@ -87,7 +88,20 @@ const Home = () => {
       setMyVideoStream(stream);
       await sendStream(stream);
     }
+
+     // Ensure we're listening for tracks after setting the remote description
+     peer.addEventListener('track', handleTrackEvent);
   }
+
+
+  const handleTrackEvent = useCallback((event: RTCTrackEvent) => {
+    console.log('Track event received:', event);
+    if (event.streams && event.streams[0]) {
+        setRemoteStream(event.streams[0]);
+    } else {
+        console.warn('No streams in track event');
+    }
+}, []);
 
   const handleCallDeclined = async ({ from }: { from: string, }) => {
     // console.log("call declined from", from, "to you",);
