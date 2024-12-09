@@ -104,7 +104,7 @@ const Home = () => {
   const handleCallAccepted = async ({ ans }: { ans: RTCSessionDescriptionInit }) => {
     console.log('Call accepted with answer now try to set remote answer', ans);
     setcalling(false)
-    setIsCallingStart(false)
+    setIsCallingStart(true)
     try {
       Peer.setLocalDescription(ans)
     } catch (error) {
@@ -142,6 +142,7 @@ const Home = () => {
     setDeclineCall(false)
     setcalling(false)
     setCallTo("")
+    setIsCallingStart(false)
   }
 
 
