@@ -59,14 +59,13 @@ const CallCard: React.FC<callCardProps> = ({
             });
 
             const ans = await Peer.getAnswer(offer);
-            if (ans) {
-                await Peer.setLocalDescription(ans);
+            
                 socket.emit('call-accepted', { emailId: from, ans });
-            }
+            
 
-            // for (const track of stream.getTracks()) {
-            //     Peer.peer?.addTrack(track, stream);
-            // }
+            for (const track of stream.getTracks()) {
+                Peer.peer?.addTrack(track, stream);
+            }
 
         } catch (error) {
             console.error('Error getting user media:', error);

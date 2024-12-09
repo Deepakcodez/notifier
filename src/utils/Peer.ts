@@ -25,7 +25,7 @@ class PeerService {
       try {
         await this.peer.setRemoteDescription(offer);
         const answer = await this.peer.createAnswer();
-        await this.peer.setLocalDescription(answer);
+        await this.peer.setLocalDescription(new RTCSessionDescription(answer));
         return this.peer.localDescription as RTCSessionDescriptionInit;
       } catch (error) {
         console.error("Error generating answer:", error);
@@ -40,7 +40,7 @@ class PeerService {
       }
   
       try {
-        await this.peer.setRemoteDescription(description);
+        await this.peer.setRemoteDescription(new RTCSessionDescription(description));
       } catch (error) {
         console.error("Error setting local description:", error);
         throw error;
@@ -55,7 +55,7 @@ class PeerService {
   
       try {
         const offer = await this.peer.createOffer();
-        await this.peer.setLocalDescription(offer);
+        await this.peer.setLocalDescription(new RTCSessionDescription(offer));
         return this.peer.localDescription as RTCSessionDescriptionInit;
       } catch (error) {
         console.error("Error generating offer:", error);
