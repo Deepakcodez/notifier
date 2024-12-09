@@ -52,17 +52,17 @@ const Home = () => {
     try {
       const stream = await getUserMediaStream();
       if (stream) {
-          setMyVideoStream(stream);
-          await sendStream(stream);
-          const offer = await createOffer();
-          await peer.setLocalDescription(offer);
-          socket?.emit('call-user', { offer, emailId: 'currentUser?.email', to: toEmail }); 
-          setcalling(true);
-          setCallTo(toEmail);
+        setMyVideoStream(stream);
+        await sendStream(stream);
+        const offer = await createOffer();
+        await peer.setLocalDescription(offer);
+        socket?.emit('call-user', { offer, emailId: 'currentUser?.email', to: toEmail });
+        setcalling(true);
+        setCallTo(toEmail);
       }
-  } catch (error) {
+    } catch (error) {
       console.error("Error in handleCallUser:", error);
-  }
+    }
   }
 
 
@@ -94,19 +94,19 @@ const Home = () => {
       await sendStream(stream);
     }
 
-     // Ensure we're listening for tracks after setting the remote description
-     peer.addEventListener('track', handleTrackEvent);
+    // Ensure we're listening for tracks after setting the remote description
+    peer.addEventListener('track', handleTrackEvent);
   }
 
 
   const handleTrackEvent = useCallback((event: RTCTrackEvent) => {
     console.log('Track event received:', event);
     if (event.streams && event.streams[0]) {
-        setRemoteStream(event.streams[0]);
+      setRemoteStream(event.streams[0]);
     } else {
-        console.warn('No streams in track event');
+      console.warn('No streams in track event');
     }
-}, []);
+  }, []);
 
   const handleCallDeclined = async ({ from }: { from: string, }) => {
     // console.log("call declined from", from, "to you",);
@@ -170,6 +170,7 @@ const Home = () => {
       addIceCandidate(new RTCIceCandidate(candidate));
     });
     peer.addEventListener('icecandidate', handleIceCandidate);
+    peer.addEventListener('track', handleTrackEvent);
     // peer.addEventListener('negotiationneeded', handleNegotiationNeeded);
 
 
@@ -184,6 +185,7 @@ const Home = () => {
 
 
       peer.removeEventListener("icecandidate", handleIceCandidate);
+      peer.removeEventListener('track', handleTrackEvent);
       // peer.removeEventListener("negotiationneeded", handleNegotiationNeeded);
 
     };
@@ -255,39 +257,39 @@ const Home = () => {
           calling &&
           <CallingCard callingTo={callTo} />
         }
-        
+
       </div>
       {
-          (myVideoStream || remoteStream) && (
-            <div className="absolute z-50 bg-violet-50 h-screen w-full flex flex-col justify-center items-center gap-4">
-              {
-                myVideoStream && (
-                  <video
-                    ref={(ref) => {
-                      if (ref) ref.srcObject = myVideoStream;
-                    }}
-                    autoPlay
-                    muted
-                    width="50"
-                    height="50"
-                  />
-                )
-              }
-              {
-                remoteStream && (
-                  <video
-                    ref={(ref) => {
-                      if (ref) ref.srcObject = remoteStream;
-                    }}
-                    autoPlay
-                    width="400"
-                    height="300"
-                  />
-                )
-              }
-            </div>
-          )
-        }
+        (myVideoStream || remoteStream) && (
+          <div className="absolute z-50 bg-violet-50 h-screen w-full flex flex-col justify-center items-center gap-4">
+            {
+              myVideoStream && (
+                <video
+                  ref={(ref) => {
+                    if (ref) ref.srcObject = myVideoStream;
+                  }}
+                  autoPlay
+                  muted
+                  width="50"
+                  height="50"
+                />
+              )
+            }
+            {
+              remoteStream && (
+                <video
+                  ref={(ref) => {
+                    if (ref) ref.srcObject = remoteStream;
+                  }}
+                  autoPlay
+                  width="400"
+                  height="300"
+                />
+              )
+            }
+          </div>
+        )
+      }
     </div>
 
   )

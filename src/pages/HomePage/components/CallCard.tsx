@@ -57,17 +57,20 @@ const CallCard: React.FC<callCardProps> = ({
         setAcceptCall(true)
         const ans = await createAnswer(offer as RTCSessionDescriptionInit)
         ans && socket.emit('call-accepted', { emailId: from, ans })
+        
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            console.log('Stream obtained from receiver:', stream);
+            setMyVideoStream(stream);
+            await sendStream(stream);
 
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-        console.log('>>>>>>>>>>> from calcard', stream)
-        setMyVideoStream(stream)
-
-        await sendStream(stream);
-
-        // Ensure tracks are enabled
-        stream.getTracks().forEach(track => {
-            track.enabled = true;
-        });
+            // Ensure tracks are enabled
+            stream.getTracks().forEach(track => {
+                track.enabled = true;
+            });
+        } catch (error) {
+            console.error('Error getting user media:', error);
+        }
 
 
 
