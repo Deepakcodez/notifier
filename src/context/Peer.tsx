@@ -21,9 +21,12 @@ export const PeerProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [remoteStream, setRemoteStream] = React.useState<MediaStream | null>(null);
     const [iceCandidateQueue, setIceCandidateQueue] = useState<RTCIceCandidate[]>([]);
     console.log('>>>>>>>>>>>', iceCandidateQueue)
+
+
     const createOffer = async () => {
         const offer = await peer.createOffer();
         await peer.setLocalDescription(offer);
+        console.log("Local offer set:", peer.localDescription);
         return offer;
     };
 
