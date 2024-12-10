@@ -24,10 +24,10 @@ class PeerService {
       if (this.peer.signalingState !== "stable") {
         await Promise.all([
           this.peer.setLocalDescription({ type: "rollback" }),
-          this.peer.setRemoteDescription(offer)
+          this.peer.setRemoteDescription(new RTCSessionDescription(offer))
         ]);
       } else {
-        await this.peer.setRemoteDescription(offer);
+        await this.peer.setRemoteDescription(new RTCSessionDescription(offer));
       }
       const answer = await this.peer.createAnswer();
       await this.peer.setLocalDescription(answer);
@@ -36,15 +36,17 @@ class PeerService {
   
     
     async setRemoteDescription(description: RTCSessionDescriptionInit): Promise<void> {
+
       if (!this.peer) {
         throw new Error("Peer connection not initialized");
       }
+      console.log("Setting remote description, current signaling state:", this.peer.signalingState);
       try {
         if (this.peer.signalingState !== "stable") {
-          console.log("Signaling state is not stable. Rolling back...");
+          console.log("Signaling state is not stable. Applying rollback...");
           await this.peer.setLocalDescription({ type: "rollback" });
         }
-        await this.peer.setRemoteDescription(description);
+        await this.peer.setRemoteDescription(new RTCSessionDescription(description));
       } catch (error) {
         console.error("Error setting remote description:", error);
         throw error;
@@ -68,42 +70,47 @@ class PeerService {
     }
 
     async handleNegotiationNeeded(): Promise<RTCSessionDescriptionInit> {
-      console.log("Handling negotiation needed");
       if (!this.peer) {
         throw new Error("Peer connection not initialized");
       }
+      
+    console.log("Handling negotiation needed, current signaling state:", this.peer.signalingState);
+    try {
       const offer = await this.peer.createOffer();
-      if (this.lastOffer) {
-        offer.sdp = this.reorderSDP(this.lastOffer.sdp!, offer.sdp!);
+      if (this.lastOffer && this.lastOffer.sdp) {
+        offer.sdp = this.reorderSDP(this.lastOffer.sdp, offer.sdp || "");
       }
       await this.peer.setLocalDescription(offer);
       this.lastOffer = offer;
       return offer;
+    } catch (error) {
+      console.error("Error in handleNegotiationNeeded:", error);
+      throw error;
     }
-  
-    private reorderSDP(previousSDP: string, newSDP: string): string {
-      const previousMLines = this.extractMLines(previousSDP);
-      const newMLines = this.extractMLines(newSDP);
-  
-      const reorderedMLines = previousMLines.map(pLine => 
-        newMLines.find(nLine => nLine.startsWith(pLine.split(' ')[0])) || pLine
-      );
-  
-      const sdpLines = newSDP.split('\n');
-      const mLineIndex = sdpLines.findIndex(line => line.startsWith('m='));
-      
-      return [
-        ...sdpLines.slice(0, mLineIndex),
-        ...reorderedMLines,
-        ...sdpLines.slice(mLineIndex + newMLines.length)
-      ].join('\n');
-    }
-  
-    private extractMLines(sdp: string): string[] {
-      return sdp.split('\n').filter(line => line.startsWith('m='));
-    }
-    
   }
+
+  private reorderSDP(previousSDP: string, newSDP: string): string {
+    const previousMLines = this.extractMLines(previousSDP);
+    const newMLines = this.extractMLines(newSDP);
+
+    const reorderedMLines = previousMLines.map(pLine => 
+      newMLines.find(nLine => nLine.startsWith(pLine.split(' ')[0])) || pLine
+    );
+
+    const sdpLines = newSDP.split('\n');
+    const mLineIndex = sdpLines.findIndex(line => line.startsWith('m='));
+    
+    return [
+      ...sdpLines.slice(0, mLineIndex),
+      ...reorderedMLines,
+      ...sdpLines.slice(mLineIndex + newMLines.length)
+    ].join('\n');
+  }
+
+  private extractMLines(sdp: string): string[] {
+    return sdp.split('\n').filter(line => line.startsWith('m='));
+  }
+}
   
   export default new PeerService();
   
