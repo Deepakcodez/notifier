@@ -1,6 +1,6 @@
 class PeerService {
     public peer: RTCPeerConnection | null;
-  
+    private lastOffer: RTCSessionDescriptionInit | null = null;
     constructor() {
       this.peer = new RTCPeerConnection({
         iceServers: [
@@ -39,14 +39,14 @@ class PeerService {
       if (!this.peer) {
         throw new Error("Peer connection not initialized");
       }
-      if (this.peer.signalingState !== "stable") {
-        await this.peer.setLocalDescription({ type: "rollback" });
-      }
-  
       try {
-        await this.peer.setRemoteDescription(new RTCSessionDescription(description));
+        if (this.peer.signalingState !== "stable") {
+          console.log("Signaling state is not stable. Rolling back...");
+          await this.peer.setLocalDescription({ type: "rollback" });
+        }
+        await this.peer.setRemoteDescription(description);
       } catch (error) {
-        console.error("Error setting local description:", error);
+        console.error("Error setting remote description:", error);
         throw error;
       }
     }
@@ -66,6 +66,43 @@ class PeerService {
         throw error;
       }
     }
+
+    async handleNegotiationNeeded(): Promise<RTCSessionDescriptionInit> {
+      console.log("Handling negotiation needed");
+      if (!this.peer) {
+        throw new Error("Peer connection not initialized");
+      }
+      const offer = await this.peer.createOffer();
+      if (this.lastOffer) {
+        offer.sdp = this.reorderSDP(this.lastOffer.sdp!, offer.sdp!);
+      }
+      await this.peer.setLocalDescription(offer);
+      this.lastOffer = offer;
+      return offer;
+    }
+  
+    private reorderSDP(previousSDP: string, newSDP: string): string {
+      const previousMLines = this.extractMLines(previousSDP);
+      const newMLines = this.extractMLines(newSDP);
+  
+      const reorderedMLines = previousMLines.map(pLine => 
+        newMLines.find(nLine => nLine.startsWith(pLine.split(' ')[0])) || pLine
+      );
+  
+      const sdpLines = newSDP.split('\n');
+      const mLineIndex = sdpLines.findIndex(line => line.startsWith('m='));
+      
+      return [
+        ...sdpLines.slice(0, mLineIndex),
+        ...reorderedMLines,
+        ...sdpLines.slice(mLineIndex + newMLines.length)
+      ].join('\n');
+    }
+  
+    private extractMLines(sdp: string): string[] {
+      return sdp.split('\n').filter(line => line.startsWith('m='));
+    }
+    
   }
   
   export default new PeerService();
