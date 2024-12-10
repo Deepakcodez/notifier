@@ -5,7 +5,7 @@ class PeerService {
       this.peer = new RTCPeerConnection({
         iceServers: [
           {
-            urls: [
+            urls: [ 
               "stun:stun.l.google.com:19302",
               "stun:global.stun.twilio.com:3478",
             ],
@@ -21,22 +21,26 @@ class PeerService {
       if (!this.peer) {
         throw new Error("Peer connection not initialized");
       }
-  
-      try {
+      if (this.peer.signalingState !== "stable") {
+        await Promise.all([
+          this.peer.setLocalDescription({ type: "rollback" }),
+          this.peer.setRemoteDescription(offer)
+        ]);
+      } else {
         await this.peer.setRemoteDescription(offer);
-        const answer = await this.peer.createAnswer();
-        await this.peer.setLocalDescription(new RTCSessionDescription(answer));
-        return this.peer.localDescription as RTCSessionDescriptionInit;
-      } catch (error) {
-        console.error("Error generating answer:", error);
-        throw error;
       }
+      const answer = await this.peer.createAnswer();
+      await this.peer.setLocalDescription(answer);
+      return this.peer.localDescription as RTCSessionDescriptionInit;
     }
   
     
-    async setLocalDescription(description: RTCSessionDescriptionInit): Promise<void> {
+    async setRemoteDescription(description: RTCSessionDescriptionInit): Promise<void> {
       if (!this.peer) {
         throw new Error("Peer connection not initialized");
+      }
+      if (this.peer.signalingState !== "stable") {
+        await this.peer.setLocalDescription({ type: "rollback" });
       }
   
       try {
@@ -55,7 +59,7 @@ class PeerService {
   
       try {
         const offer = await this.peer.createOffer();
-        await this.peer.setLocalDescription(new RTCSessionDescription(offer));
+        await this.peer.setLocalDescription(offer);
         return this.peer.localDescription as RTCSessionDescriptionInit;
       } catch (error) {
         console.error("Error generating offer:", error);

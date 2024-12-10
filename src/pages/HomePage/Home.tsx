@@ -106,7 +106,7 @@ const Home = () => {
     setcalling(false)
     setIsCallingStart(true)
     try {
-      Peer.setLocalDescription(ans)
+      Peer.setRemoteDescription(ans)
     } catch (error) {
       console.log('>>>>>>>>>>> Error in set in local description ', error)
     }
@@ -169,12 +169,12 @@ const Home = () => {
     console.log('>>>>>>>>>>>handleNegotiationDone from ', from, answer)
     try {
       if (Peer.peer?.signalingState === "stable") {
-        console.warn("Signaling state is stable; skipping setLocalDescription.");
+        console.warn("Signaling state is stable; skipping setRemoteDescription.");
         return;
       }
 
       console.log("Setting local description with answer:", answer);
-      await Peer.setLocalDescription(answer);
+      await Peer.setRemoteDescription(answer);
     } catch (error) {
       console.error("Failed to set local description:", error);
     }
