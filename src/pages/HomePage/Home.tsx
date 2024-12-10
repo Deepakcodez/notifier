@@ -158,7 +158,7 @@ const Home = () => {
   const handleNegotiationNeeded = useCallback(async () => {
     try {
 
-      const offer = await Peer.handleNegotiationNeeded();
+      const offer = await Peer.getOffer();
       socket.emit('negotiation-needed', { offer, to: callTo });
     } catch (err) {
       console.error('Error during negotiation:', err);
@@ -288,7 +288,7 @@ const Home = () => {
       {
         isCallingStart &&
         <div className="absolute bg-violet-100/50 backdrop h-screen w-[100vw] flex ">
-
+          
           {remoteVideoStream && (
             <div className="relative ">
               <ReactPlayer
